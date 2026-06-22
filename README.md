@@ -4,7 +4,7 @@ Infer where (and when) an aircraft touched down on the runway, using only ADS-B 
 
 Touchdown is never directly reported in ADS-B. This project reconstructs it from the trajectory, calibrates and validates the result against 40,500 QAR-matched flights, and reports a per-flight confidence interval rather than a bare number.
 
-For the authoritative specification see **[requirements.md](requirements.md)** (what the system must do) and **[design.md](design.md)** (how it does it). This README is the orientation layer: the idea, the approach, and how to build and test it with data.
+For the authoritative specification see **[requirements.md](.kiro/specs/touchdown-point-detection/requirements.md)** (what the system must do) and **[design.md](.kiro/specs/touchdown-point-detection/design.md)** (how it does it). This README is the orientation layer: the idea, the approach, and how to build and test it with data.
 
 ---
 
@@ -124,5 +124,6 @@ A practical first milestone: run stages 1–3 on a held-out QAR slice, produce t
 
 ## See also
 
-- **[requirements.md](requirements.md)** — 21 EARS-style requirements with acceptance criteria.
-- **[design.md](design.md)** — architecture, data models, correctness properties, error handling, and testing strategy.
+- **[requirements.md](.kiro/specs/touchdown-point-detection/requirements.md)** — 21 EARS-style requirements with acceptance criteria.
+- **[design.md](.kiro/specs/touchdown-point-detection/design.md)** — architecture, data models, correctness properties, error handling, and testing strategy.
+- **[tasks.md](.kiro/specs/touchdown-point-detection/tasks.md)** — the staged, test-driven implementation plan.
