@@ -1,0 +1,101 @@
+# tdz_config.yaml
+# Canonical example configuration for the touchdown-point-detection pipeline.
+# Values match the design "Configuration Schema". All numeric values are SI per
+# the Units Convention; explicit unit suffixes are preserved in the keys.
+pipeline:
+  master_random_seed: 42
+  ads_b_source: "aireon"            # "aireon" | "fr24"
+
+timebase:
+  strategy: "common_grid"           # "common_grid" | "continuous_time"
+  grid_interval_s: 1.0
+  interpolation_method: "kinematic" # "kinematic" | "linear"
+
+signals:
+  smoothing_method: "savgol"        # "savgol" | "gp"
+  savgol_window_samples: 7
+  savgol_poly_order: 3
+  gp_length_scale_s: 8.0
+  gp_noise_variance: 0.5
+
+estimators:
+  enabled:
+    - "decel_knee"
+    - "flare_crossing"
+    - "imm_rts"
+    - "jerk_onset"
+    - "pelt"
+    - "lightgbm"
+    - "sequence_model"
+  physics_fallback_threshold: 50    # Min QAR-labeled flights per type for learned
+
+fusion:
+  method: "stacking"                # "stacking" | "weighted_blend"
+  confidence_threshold_sigma: 5.0   # Exclude estimator if sigma_t exceeds this
+  low_confidence_ci_width_ft: 600   # Flag if 90% CI width exceeds this
+
+quality_gates:
+  min_samples_near_td: 3
+  max_gap_spanning_td_s: 15
+  min_samples_in_window: 3
+  window_half_width_s: 30
+  max_excluded_fraction: 0.5
+  max_longitudinal_accel_g: 1.0
+  max_lateral_accel_g: 0.5
+  max_turn_rate_deg_s: 6.0
+  duplicate_timestamp_tolerance_s: 0.1
+
+lever_arms:
+  # Per ICAO type designator; pitch is assumed (not observable in ADS-B)
+  B738:
+    vertical_offset_m: 4.2
+    longitudinal_offset_m: 12.5
+    nominal_touchdown_pitch_deg: 5.5
+    aircraft_class: "narrowbody"
+  B77W:
+    vertical_offset_m: 5.8
+    longitudinal_offset_m: 18.0
+    nominal_touchdown_pitch_deg: 4.5
+    aircraft_class: "widebody"
+  # ... additional types
+  default_strategy: "class_median"  # Missing type -> median of its aircraft_class (NOT worst-case)
+  class_medians:                    # Used when a type-specific entry is absent
+    regional:   { vertical_offset_m: 3.2, longitudinal_offset_m: 8.0,  nominal_touchdown_pitch_deg: 5.0 }
+    narrowbody: { vertical_offset_m: 4.2, longitudinal_offset_m: 12.5, nominal_touchdown_pitch_deg: 5.5 }
+    widebody:   { vertical_offset_m: 5.8, longitudinal_offset_m: 18.0, nominal_touchdown_pitch_deg: 4.5 }
+  class_default_widens_ci: true     # Inflate distance CI to span class range + mark low-confidence
+
+geodesy:
+  geoid_model: "EGM2008"            # Convert MSL runway elevation -> HAE before any crossing
+  assume_runway_elevation_datum: "MSL"  # Datum of supplied elevation if untagged
+
+vertical_crossing:
+  fit_region_upper_ft: 250          # Fit glideslope+flare from here down (NOT flare-only <50 ft)
+  fit_region_lower_ft: 0
+  min_samples_in_fit_region: 3
+  residual_bias_trigger_ft: 15      # Estimate residual sensor bias only above this, from high-approach samples
+
+sources:                            # Capability descriptors gate which estimators run
+  aireon:
+    has_geometric_altitude: true
+    samples_are_raw: true
+    async_timestamps: true
+  fr24:
+    has_geometric_altitude: false   # ASSUMPTION — flip once confirmed
+    samples_are_raw: false          # ASSUMPTION — provider-interpolated
+    async_timestamps: false
+
+validation:
+  primary_split_key: "tail"         # Leakage control (headline metrics)
+  generalization_evals: ["airport", "runway"]  # Reported separately, not intersected
+  use_calibration_split: true       # Three-way train/calibration/test for interval calibration
+  min_stratum_size: 30
+  cross_source: true
+  clock_offset_max_s: 2.0            # Time-domain exclusion only; confirm vs observed distribution
+  clock_drift_max_s: 1.0
+  wrong_runway_lateral_margin_ft: 50 # + runway half-width before flagging suspected wrong runway
+
+output:
+  distance_units: "feet"
+  speed_units: "knots"
+  time_precision_decimals: 3

@@ -216,3 +216,49 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------------------
+# Project-specific (touchdown-point-detection)
+# ---------------------------------------------------------------------------
+
+# macOS finder metadata (one is already present at the repo root)
+.DS_Store
+**/.DS_Store
+
+# Surveillance / truth data — large and potentially sensitive; never commit.
+# ADS-B trajectories (Aireon / FlightRadar24) and QAR-matched ground truth.
+data/
+datasets/
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.csv
+*.csv.gz
+*.jsonl
+*.jsonl.gz
+
+# Trained model artifacts and checkpoints (LightGBM, TCN/BiLSTM, etc.)
+models/
+artifacts/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.joblib
+*.pkl
+*.pickle
+lightgbm_*.txt
+
+# Pipeline run outputs, validation reports, and rendered figures
+outputs/
+results/
+reports/
+runs/
+*.tdz.json
+
+# Local geoid model grids (EGM2008, etc.) — large binary reference data
+geoid/
+*.gtx
+*.tif
