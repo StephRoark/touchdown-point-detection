@@ -141,11 +141,11 @@ Tasks within the same wave have no dependencies on each other and may be execute
 
 ### Stage 3 — Signals and physics / change-point baselines
 
-- [ ] 11. Implement the signals/feature module (`tdz.signals`)
-  - [ ] 11.1 Implement segmented (piecewise) regression directly on the raw groundspeed-vs-time series as the primary deceleration-regime estimate (breakpoint = regime transition), avoiding differentiate-then-detect.
-  - [ ] 11.2 Implement corroborating derivatives (deceleration, jerk) via Savitzky-Golay (poly order ≤ 3, window ≥ 5 samples) or a non-stationary/piecewise Gaussian process; emit GP posterior std for inverse-variance weighting; flag derivatives unreliable when < 5 valid samples in the window. Report the configured smoothing window in diagnostics.
-  - [ ] 11.3 Build feature channels (incl. distance-to-threshold and time-delta) for learned estimators.
-  - [ ] 11.4 Write derivative-quality known-answer test (analytical derivative → RMS error) and the QAR-vs-smoothed-deceleration RMS-discrepancy check harness.
+- [x] 11. Implement the signals/feature module (`tdz.signals`)
+  - [x] 11.1 Implement segmented (piecewise) regression directly on the raw groundspeed-vs-time series as the primary deceleration-regime estimate (breakpoint = regime transition), avoiding differentiate-then-detect.
+  - [x] 11.2 Implement corroborating derivatives (deceleration, jerk) via Savitzky-Golay (poly order ≤ 3, window ≥ 5 samples) or a non-stationary/piecewise Gaussian process; emit GP posterior std for inverse-variance weighting; flag derivatives unreliable when < 5 valid samples in the window. Report the configured smoothing window in diagnostics.
+  - [x] 11.3 Build feature channels (incl. distance-to-threshold and time-delta) for learned estimators.
+  - [x] 11.4 Write derivative-quality known-answer test (analytical derivative → RMS error) and the QAR-vs-smoothed-deceleration RMS-discrepancy check harness.
   - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7_
 
 - [ ] 12. Implement physics estimators (`tdz.estimators.physics`)
