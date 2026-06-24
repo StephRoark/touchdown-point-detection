@@ -107,13 +107,13 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - Write property test P19 (synthetic crossing with known undulation recovers correct height; MSL and HAE inputs agree after correction).
   - _Requirements: 11.1, 11.2; Property 19_
 
-- [ ] 6. Implement the pitch-resolved lever-arm correction
-  - [ ] 6.1 Apply the vertical offset V to the altitude-crossing target and shift along-runway position by exactly `X·cos θ + V·sin θ` using the per-type nominal pitch θ (pitch assumed, not measured); record in diagnostics that pitch was assumed.
-  - [ ] 6.2 Implement the class-median default for missing type entries (median of aircraft class, global median if class unknown), mark the estimate low-confidence with `MISSING_LEVER_ARM`, record the assumed values/class/pitch, and widen the distance CI to span the class lever-arm range. Never use a worst-case (largest-offset) default.
-  - [ ] 6.3 Write property test P2 (shift equals `X·cosθ + V·sinθ`, crossing target shifts by V) and P23 (missing type → class median, widened CI, low-confidence, no worst-case bias).
+- [x] 6. Implement the pitch-resolved lever-arm correction
+  - [x] 6.1 Apply the vertical offset V to the altitude-crossing target and shift along-runway position by exactly `X·cos θ + V·sin θ` using the per-type nominal pitch θ (pitch assumed, not measured); record in diagnostics that pitch was assumed.
+  - [x] 6.2 Implement the class-median default for missing type entries (median of aircraft class, global median if class unknown), mark the estimate low-confidence with `MISSING_LEVER_ARM`, record the assumed values/class/pitch, and widen the distance CI to span the class lever-arm range. Never use a worst-case (largest-offset) default.
+  - [x] 6.3 Write property test P2 (shift equals `X·cosθ + V·sinθ`, crossing target shifts by V) and P23 (missing type → class median, widened CI, low-confidence, no worst-case bias).
   - _Requirements: 2.3, 7.2, 7.3, 7.4, 7.5, 7.6; Properties 2, 23_
 
-- [ ] 7. Implement the wrong-runway lateral-offset gate
+- [x] 7. Implement the wrong-runway lateral-offset gate
   - Flag `SUSPECTED_WRONG_RUNWAY` when lateral offset exceeds half runway width + configurable margin (default 50 ft); flag `OUT_OF_BOUNDS_POSITION` when along-runway distance exceeds runway length or is negative (still report the value).
   - Write property test P22 (parallel-runway-offset trajectory → suspected-wrong-runway set).
   - _Requirements: 2.4, 2.5; Property 22_

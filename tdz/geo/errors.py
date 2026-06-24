@@ -76,3 +76,34 @@ class DatumUnresolvedError(GeoError):
         self.detail = detail
         self.reason_code = FailureReason.DATUM_UNRESOLVED
         super().__init__(detail)
+
+
+class LeverArmResolutionError(GeoError):
+    """Raised when no lever arm can be resolved for an aircraft type.
+
+    The pitch-resolved lever-arm correction (Task 6, Requirement 7) needs a
+    lever arm for the flight's ICAO type. Resolution proceeds type-specific
+    entry -> aircraft-class median -> global median. The lever arm is
+    *unresolvable* only when none of these are available, i.e. the configured
+    lever-arm table has no type-specific entry, no usable class median for the
+    aircraft's class, and no entries at all from which to derive a global
+    median.
+
+    Rather than silently fabricate an offset (which would inject an unknown
+    directional bias into the touchdown distance, exactly what Requirement 7.5
+    forbids), the flight is rejected.
+
+    Attributes
+    ----------
+    detail:
+        Human-readable description of what could not be resolved.
+    reason_code:
+        Always :attr:`FailureReason.MISSING_LEVER_ARM`.
+    """
+
+    reason_code: FailureReason = FailureReason.MISSING_LEVER_ARM
+
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        self.reason_code = FailureReason.MISSING_LEVER_ARM
+        super().__init__(detail)
