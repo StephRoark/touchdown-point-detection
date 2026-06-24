@@ -120,10 +120,10 @@ Tasks within the same wave have no dependencies on each other and may be execute
 
 ### Stage 2 — Timebase, ingest/QA, bracketing and classification
 
-- [ ] 8. Implement the timebase module (`tdz.timebase`)
-  - [ ] 8.1 Implement async-timestamp preservation: keep separate position and velocity timestamp arrays, never merge into one sample time.
-  - [ ] 8.2 Implement kinematic (dead-reckoning) interpolation that propagates position using velocity; fall back to linear positional interpolation and flag `DEGRADED_INTERPOLATION` when velocity is unavailable. Emit an explicit time-delta channel. Support both common-grid resampling and continuous-time strategies.
-  - [ ] 8.3 Write property test P3 (interpolation error < 30 ft at 120–150 kt for known offsets), P4 (async timestamps preserved, distinct-timestamp count conserved), and the synthetic straight-line known-answer test.
+- [x] 8. Implement the timebase module (`tdz.timebase`)
+  - [x] 8.1 Implement async-timestamp preservation: keep separate position and velocity timestamp arrays, never merge into one sample time.
+  - [x] 8.2 Implement kinematic (dead-reckoning) interpolation that propagates position using velocity; fall back to linear positional interpolation and flag `DEGRADED_INTERPOLATION` when velocity is unavailable. Emit an explicit time-delta channel. Support both common-grid resampling and continuous-time strategies.
+  - [x] 8.3 Write property test P3 (interpolation error < 30 ft at 120–150 kt for known offsets), P4 (async timestamps preserved, distinct-timestamp count conserved), and the synthetic straight-line known-answer test.
   - _Requirements: 8.1, 8.2, 8.3, 10.1, 10.2, 10.3, 10.4; Properties 3, 4_
 
 - [ ] 9. Implement ingest, source-capability gating, and QA (`tdz.io`)
