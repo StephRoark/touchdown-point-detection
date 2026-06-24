@@ -7,8 +7,68 @@ vertical datum (geoid-correct runway elevation to HAE).
 Raw input schemas for the external ADS-B timeseries and QAR truth sources are
 defined in :mod:`tdz.io.raw_schema` (distinct from the pipeline-internal models
 in :mod:`tdz.models`).
+
+Public API
+----------
+Parsing (Task 9.1, :mod:`tdz.io.ingest`):
+
+* :func:`parse_aireon_messages` -- Aireon async stream -> :class:`FlightRecord`
+  with separate position/velocity timebases (Req 8.3).
+* :func:`parse_fr24_records` -- co-timed FR24 rows -> :class:`FlightRecord` with
+  ``position_times == velocity_times`` (Req 8.1, 8.2).
+* :func:`find_qar_truth` -- light optional QAR-by-HEXID/registration lookup
+  (``JOIN_KEYS``); the authoritative join is Task 21.
+* :func:`aireon_messages_from_dataframe` / :func:`fr24_records_from_dataframe`
+  -- optional pandas adapters (lazy import; the numpy-only core never needs
+  pandas).
+
+Source-capability gating (Task 9.2, :mod:`tdz.io.gating`; Req 8.5-8.8 /
+Property 20):
+
+* :func:`gate_estimators` / :class:`SourceGating` -- decide which estimators are
+  eligible vs excluded (``GEOMETRIC_ALT_UNAVAILABLE``) from a
+  :class:`~tdz.config.models.SourceCapability`, and surface the
+  ``samples_independent`` flag for provider-interpolated sources.
+* :data:`GEOMETRIC_ALTITUDE_ESTIMATORS` -- the geometric-altitude-dependent
+  estimator ids.
+
+QA gates (Task 9.3, :mod:`tdz.io.qa`; Req 9.1, 9.3, 9.4, 9.5 / Properties 8, 9,
+13):
+
+* :func:`deduplicate_by_timestamp` -- last-received duplicate dedup (Property 8).
+* :func:`apply_kinematic_gates` -- longitudinal/lateral/turn-rate exclusion
+  (Property 9), using :data:`STANDARD_GRAVITY_MPS2`.
+* :func:`evaluate_sufficiency` -- no-estimate reasons against a parameterized
+  :class:`TouchdownWindow` (Req 9.5).
+* :func:`run_qa` -- flight-level orchestration returning a :class:`QAResult`
+  (cleaned record + :class:`QADiagnostics` + status/reason).
 """
 
+from tdz.io.gating import (
+    GEOMETRIC_ALTITUDE_ESTIMATORS,
+    SourceGating,
+    gate_estimators,
+)
+from tdz.io.ingest import (
+    aireon_messages_from_dataframe,
+    find_qar_truth,
+    fr24_records_from_dataframe,
+    parse_aireon_messages,
+    parse_fr24_records,
+)
+from tdz.io.qa import (
+    STANDARD_GRAVITY_MPS2,
+    DedupResult,
+    KinematicGateResult,
+    QADiagnostics,
+    QAResult,
+    SufficiencyResult,
+    TouchdownWindow,
+    apply_kinematic_gates,
+    deduplicate_by_timestamp,
+    evaluate_sufficiency,
+    run_qa,
+)
 from tdz.io.raw_schema import (
     ADSB_FIELDS,
     ADSB_TO_FLIGHTRECORD,
@@ -25,6 +85,7 @@ from tdz.io.raw_schema import (
 )
 
 __all__ = [
+    # raw_schema
     "FieldSpec",
     "ADSB_FIELDS",
     "QAR_FIELDS",
@@ -37,4 +98,26 @@ __all__ = [
     "ADSB_TO_FLIGHTRECORD",
     "QAR_TO_TRUTHRECORD",
     "JOIN_KEYS",
+    # ingest (Task 9.1)
+    "parse_aireon_messages",
+    "parse_fr24_records",
+    "find_qar_truth",
+    "aireon_messages_from_dataframe",
+    "fr24_records_from_dataframe",
+    # gating (Task 9.2)
+    "GEOMETRIC_ALTITUDE_ESTIMATORS",
+    "SourceGating",
+    "gate_estimators",
+    # qa (Task 9.3)
+    "STANDARD_GRAVITY_MPS2",
+    "TouchdownWindow",
+    "DedupResult",
+    "KinematicGateResult",
+    "SufficiencyResult",
+    "QADiagnostics",
+    "QAResult",
+    "deduplicate_by_timestamp",
+    "apply_kinematic_gates",
+    "evaluate_sufficiency",
+    "run_qa",
 ]

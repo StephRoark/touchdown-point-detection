@@ -126,11 +126,11 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - [x] 8.3 Write property test P3 (interpolation error < 30 ft at 120–150 kt for known offsets), P4 (async timestamps preserved, distinct-timestamp count conserved), and the synthetic straight-line known-answer test.
   - _Requirements: 8.1, 8.2, 8.3, 10.1, 10.2, 10.3, 10.4; Properties 3, 4_
 
-- [ ] 9. Implement ingest, source-capability gating, and QA (`tdz.io`)
-  - [ ] 9.1 Parse both source formats (Aireon async, FR24 co-timed), join runway/aircraft metadata, and build `FlightRecord`. Record the ADS-B source per estimate.
-  - [ ] 9.2 Apply per-source `SourceCapability` gating: disable geometric-altitude-dependent estimators when `has_geometric_altitude` is false, never substitute barometric altitude into a geometric crossing, and don't treat provider-interpolated samples as independent observations. Emit `GEOMETRIC_ALT_UNAVAILABLE`. Drive entirely from config so FR24 assumptions can be flipped.
-  - [ ] 9.3 Implement QA gates: deduplicate identical timestamps (within 0.1 s, keep last-received); exclude samples implying >1.0 g longitudinal, >0.5 g lateral, or >6°/s turn rate, logging counts/timestamps; reject flights below sufficiency thresholds with the matching reason code (`INSUFFICIENT_SAMPLES`, `NO_GROUNDSPEED`, `GAP_SPANS_TOUCHDOWN`, `EXCESSIVE_EXCLUSIONS`).
-  - [ ] 9.4 Write property tests P8 (dedup count/last-received), P9 (kinematic-gate exclusion), P13 (missing vertical rate still produces estimate), and P20 (no-geometric-altitude source excludes vertical estimators).
+- [x] 9. Implement ingest, source-capability gating, and QA (`tdz.io`)
+  - [x] 9.1 Parse both source formats (Aireon async, FR24 co-timed), join runway/aircraft metadata, and build `FlightRecord`. Record the ADS-B source per estimate.
+  - [x] 9.2 Apply per-source `SourceCapability` gating: disable geometric-altitude-dependent estimators when `has_geometric_altitude` is false, never substitute barometric altitude into a geometric crossing, and don't treat provider-interpolated samples as independent observations. Emit `GEOMETRIC_ALT_UNAVAILABLE`. Drive entirely from config so FR24 assumptions can be flipped.
+  - [x] 9.3 Implement QA gates: deduplicate identical timestamps (within 0.1 s, keep last-received); exclude samples implying >1.0 g longitudinal, >0.5 g lateral, or >6°/s turn rate, logging counts/timestamps; reject flights below sufficiency thresholds with the matching reason code (`INSUFFICIENT_SAMPLES`, `NO_GROUNDSPEED`, `GAP_SPANS_TOUCHDOWN`, `EXCESSIVE_EXCLUSIONS`).
+  - [x] 9.4 Write property tests P8 (dedup count/last-received), P9 (kinematic-gate exclusion), P13 (missing vertical rate still produces estimate), and P20 (no-geometric-altitude source excludes vertical estimators).
   - _Requirements: 8.4, 8.5, 8.6, 8.7, 8.8, 9.1, 9.3, 9.4, 9.5; Properties 8, 9, 13, 20_
 
 - [ ] 10. Implement trajectory classification and the coarse bracket (`tdz.bracket`)
