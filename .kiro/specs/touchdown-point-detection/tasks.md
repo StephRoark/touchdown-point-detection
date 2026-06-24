@@ -133,10 +133,10 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - [x] 9.4 Write property tests P8 (dedup count/last-received), P9 (kinematic-gate exclusion), P13 (missing vertical rate still produces estimate), and P20 (no-geometric-altitude source excludes vertical estimators).
   - _Requirements: 8.4, 8.5, 8.6, 8.7, 8.8, 9.1, 9.3, 9.4, 9.5; Properties 8, 9, 13, 20_
 
-- [ ] 10. Implement trajectory classification and the coarse bracket (`tdz.bracket`)
-  - [ ] 10.1 Classify each trajectory as completed-landing, go-around, or touch-and-go from altitude/speed/track signatures; go-around → `GO_AROUND` no-touchdown result; touch-and-go → tagged (report-or-suppress per config); do not assume one landing per trajectory (document/handle multiple).
-  - [ ] 10.2 Form the flag-independent coarse bracket `[t_lo, t_hi]` from the on-ground flag (upper bound only) AND a flag-independent indicator (geometric-altitude descent toward runway elevation + ground-roll deceleration onset). Anchor the bracket to the first contact for bounces. Expose the bracket for all downstream quality gates.
-  - [ ] 10.3 Write property test P21 (go-around → no touchdown; bounce → first contact, not a midpoint) and validate classification against QAR-derived labels (confusion matrix).
+- [x] 10. Implement trajectory classification and the coarse bracket (`tdz.bracket`)
+  - [x] 10.1 Classify each trajectory as completed-landing, go-around, or touch-and-go from altitude/speed/track signatures; go-around → `GO_AROUND` no-touchdown result; touch-and-go → tagged (report-or-suppress per config); do not assume one landing per trajectory (document/handle multiple).
+  - [x] 10.2 Form the flag-independent coarse bracket `[t_lo, t_hi]` from the on-ground flag (upper bound only) AND a flag-independent indicator (geometric-altitude descent toward runway elevation + ground-roll deceleration onset). Anchor the bracket to the first contact for bounces. Expose the bracket for all downstream quality gates.
+  - [x] 10.3 Write property test P21 (go-around → no touchdown; bounce → first contact, not a midpoint) and validate classification against QAR-derived labels (confusion matrix).
   - _Requirements: 1.1, 1.2, 21.1, 21.2, 21.3, 21.4, 21.5, 21.6; Property 21_
 
 ### Stage 3 — Signals and physics / change-point baselines
