@@ -148,19 +148,19 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - [x] 11.4 Write derivative-quality known-answer test (analytical derivative → RMS error) and the QAR-vs-smoothed-deceleration RMS-discrepancy check harness.
   - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7_
 
-- [ ] 12. Implement physics estimators (`tdz.estimators.physics`)
-  - [ ] 12.1 Deceleration-knee estimator: piecewise groundspeed fit (2- or 3-segment), breakpoint = `t_td`, with aircraft-type priors on approach speed/deceleration; output fitted segments, breakpoint, residuals as diagnostics.
-  - [ ] 12.2 Vertical flare-crossing estimator: joint glideslope+flare fit over the extended region (~200–300 ft down to surface), curved flare term; operate in HAE with geoid-corrected runway elevation and antenna-to-gear height added to the crossing target; keep deterministic geoid correction separate from residual sensor-bias estimation (bias from high-approach samples only, never flare-region); disable for sources lacking geometric altitude; flag `INSUFFICIENT_FLARE_SAMPLES` when < 3 samples in the fit region.
-  - [ ] 12.3 IMM filter + RTS smoother: two modes (descending vs ground roll), mode-probability crossover = `t_td`, consuming async position/velocity natively; output mode probabilities, crossover sharpness, covariance at `t_td`.
-  - [ ] 12.4 Enforce the common `BaseEstimator`/`TDEstimate` contract and the on-ground-flag upper bound: clamp/discard any candidate `t_td` later than the transition; never output the transition time as `t_td`. Write property test P5.
-  - [ ] 12.5 Write the flare-starvation edge test (only 1 sample below 50 ft → extended-region fit, not failure) and the FR24-source test (vertical estimator excluded, estimate still produced from speed/position).
+- [x] 12. Implement physics estimators (`tdz.estimators.physics`)
+  - [x] 12.1 Deceleration-knee estimator: piecewise groundspeed fit (2- or 3-segment), breakpoint = `t_td`, with aircraft-type priors on approach speed/deceleration; output fitted segments, breakpoint, residuals as diagnostics.
+  - [x] 12.2 Vertical flare-crossing estimator: joint glideslope+flare fit over the extended region (~200–300 ft down to surface), curved flare term; operate in HAE with geoid-corrected runway elevation and antenna-to-gear height added to the crossing target; keep deterministic geoid correction separate from residual sensor-bias estimation (bias from high-approach samples only, never flare-region); disable for sources lacking geometric altitude; flag `INSUFFICIENT_FLARE_SAMPLES` when < 3 samples in the fit region.
+  - [x] 12.3 IMM filter + RTS smoother: two modes (descending vs ground roll), mode-probability crossover = `t_td`, consuming async position/velocity natively; output mode probabilities, crossover sharpness, covariance at `t_td`.
+  - [x] 12.4 Enforce the common `BaseEstimator`/`TDEstimate` contract and the on-ground-flag upper bound: clamp/discard any candidate `t_td` later than the transition; never output the transition time as `t_td`. Write property test P5.
+  - [x] 12.5 Write the flare-starvation edge test (only 1 sample below 50 ft → extended-region fit, not failure) and the FR24-source test (vertical estimator excluded, estimate still produced from speed/position).
   - _Requirements: 5.1, 6.1, 17.1, 17.2, 17.3, 17.4, 17.5, 18.1, 18.2, 18.3, 18.4; Property 5_
 
-- [ ] 13. Implement change-point estimators (`tdz.estimators.changepoint`)
+- [x] 13. Implement change-point estimators (`tdz.estimators.changepoint`)
   - Implement PELT, CUSUM, and GLRT on the deceleration signal, plus a jerk-onset detector (uses jerk onset timing, never as sole basis for `t_td`). All emit the common contract and respect the on-ground upper bound.
   - _Requirements: 5.2, 16.3_
 
-- [ ] 14. Wire a physics+change-point baseline run and the naive baseline
+- [x] 14. Wire a physics+change-point baseline run and the naive baseline
   - Run stages 1–3 end-to-end on a synthetic/held-out slice; implement the naive "first on-ground sample position" baseline for side-by-side comparison; produce a preliminary distance-error distribution to surface the cadence-limited floor.
   - _Requirements: 12.8, 13.0_
 
