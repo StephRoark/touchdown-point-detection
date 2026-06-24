@@ -8,7 +8,43 @@ For the authoritative specification see **[requirements.md](.kiro/specs/touchdow
 
 ---
 
+## The big picture, in plain language
+
+**The one-sentence version:** an airplane's transponder reports where it is every few seconds; we use that breadcrumb trail to figure out the exact spot on the runway where its wheels first touched, how fast it was going, and how sure we are — so safety analysts can spot landings that touched down too far down the runway or too fast.
+
+**An everyday analogy.** Imagine a car's phone reports its GPS location once every 4–5 seconds. You want to know the exact point where the car crossed a finish line painted on the road. The car covers the length of a football field between two reports, and the finish-line crossing almost always happens *between* two pings — never exactly on one. So you can't just pick the closest ping; you have to reconstruct the motion and infer the in-between moment. That is essentially this problem, with an airplane, a runway threshold instead of a finish line, and safety stakes attached.
+
+### What we're measuring, and why it matters
+
+- **Touchdown point** — the distance from the start of the runway (the "threshold") to where the main wheels first hit. Touch down too far along the runway (a "long landing") and there may not be enough pavement left to stop, which risks a **runway overrun**.
+- **Touchdown speed** — how fast the aircraft was moving when it landed. Faster touchdowns need more stopping distance, which also raises overrun risk.
+- **A confidence interval** — instead of a single number ("1,500 ft past the threshold"), every estimate comes with an honest range ("1,500 ft, give or take 200"). In safety work, knowing *how much to trust* a number is as important as the number itself.
+
+These outputs let analysts comb through tens of thousands of historical landings and flag the risky ones for review.
+
+### Where the data comes from
+
+- **ADS-B** (Automatic Dependent Surveillance–Broadcast): airplanes continuously broadcast their position, speed, and altitude. Ground stations and satellites record it. It's widely available, but it was built for air-traffic awareness, not for pinpointing touchdown — hence the difficulty. Updates arrive only every ~4–5 seconds.
+- **QAR** (Quick Access Recorder): an onboard recorder that captures what really happened, including the true touchdown time and location. We have 40,500 flights with matched QAR data. We use it as the "answer key" to calibrate and grade the system — but the finished system runs on ADS-B alone, because most flights don't come with QAR data.
+- **Runway and aircraft reference data**: where each runway's threshold sits, its heading, length, and width; and per-aircraft-type details like where the GPS antenna sits relative to the wheels.
+
+### Key terms in one place
+
+| Term | Plain meaning |
+|------|---------------|
+| **Threshold** | The line where the usable landing runway begins; we measure touchdown distance from here. |
+| **Flare** | The gentle nose-up maneuver pilots make just before landing to slow the descent; it curves the altitude path right before touchdown. |
+| **On-ground flag** | A bit in the data that flips from "airborne" to "on ground." It flips *late and unreliably*, so we use it only as a rough upper bound, never as the answer. |
+| **Lever arm** | The GPS antenna sits on top of the fuselage, not at the wheels. That offset (and the aircraft's nose-up angle) must be corrected for, or the touchdown point is wrong by tens of feet. |
+| **HAE vs MSL** | Two different "zero points" for altitude — height above the GPS ellipsoid (HAE) vs height above sea level (MSL). Runway elevations and GPS altitudes often use different ones; mixing them adds a tens-of-meters error. |
+| **Go-around / touch-and-go** | A go-around is an aborted landing (no touchdown); a touch-and-go briefly touches then takes off again. The system must recognize these so it doesn't report a touchdown that never happened. |
+| **Sub-sample estimation** | Pinpointing an event to finer than the 4–5 second data spacing — the core trick of the whole project. |
+
+---
+
 ## Why this is hard
+
+In short: the data is coarse, slightly misaligned in time, partly missing, and the one obvious signal (the on-ground flag) is unreliable. The four properties below shape every design decision.
 
 ADS-B was not designed to observe touchdown, and four properties of the data shape every design decision:
 
@@ -39,6 +75,22 @@ A handful of decisions matter more than the model choice and are easy to get wro
 - Pitch is not in ADS-B; resolve the lever arm with a per-type *assumed* nominal touchdown pitch.
 - Distance truth is clock-independent (it comes from the QAR touchdown lat/long), so clock alignment is needed only for *time* labels — confining clock risk to the time domain.
 - Run a coarse, on-ground-flag-independent bracket first, then refine; classify go-arounds and touch-and-goes so the system never forces a touchdown where none occurred.
+
+## How a single landing flows through the system
+
+Here is the journey of one flight's data, end to end, in plain terms. Each numbered step matches a module in the code layout below.
+
+1. **Ingest & quality-check.** Read the raw ADS-B for the flight, attach the runway and aircraft-type reference data, and clean the data: drop duplicate or physically impossible samples (e.g. an implied 2-g deceleration), note which signals are missing, and put the runway elevation into the same altitude "zero point" (datum) as the GPS altitude. If the data is too sparse or broken, the flight is flagged and no estimate is forced.
+2. **Classify and bracket.** Decide whether this was a normal landing, a go-around (no touchdown), or a touch-and-go. For real landings, draw a rough time window — the "bracket" — that is very likely to contain the touchdown. This solves a chicken-and-egg problem: later quality checks need to look "near touchdown," but we don't know touchdown yet, so we use this rough window as the stand-in.
+3. **Build a clean timeline.** Because position and speed can arrive with different timestamps, the system never naively merges them. It reconstructs the motion (dead-reckoning from speed) so it can ask "where was the aircraft at *exactly* this instant," and builds smoothed speed/deceleration signals.
+4. **Run several independent estimators.** Multiple methods each estimate the touchdown *time*:
+   - **Physics methods** read it from the kinematics — where the deceleration sharply changes (the "knee"), where the altitude path crosses the runway, or where a tracking filter switches from "flying" to "rolling."
+   - **Change-point methods** statistically detect the moment the motion changes regime.
+   - **Learned methods** are trained on the 40,500 QAR examples to predict touchdown from the data patterns.
+   Each estimator reports its time, its uncertainty, and supporting diagnostics in the same standard format.
+5. **Fuse them.** Combine the estimators into one answer, weighting each by how reliable it looks for this flight and down-weighting or dropping ones that disagree or report low confidence. The result is a single touchdown time plus a calibrated confidence interval.
+6. **Map time to place.** Take the fused touchdown time, find the aircraft's position at that instant, correct for the antenna-to-wheels offset, and project onto the runway centerline to get the distance from the threshold (plus sideways offset and touchdown speed). Convert to feet/knots only here, at the very end.
+7. **Validate against truth.** Separately, compare the system's answers to the QAR "answer key" across many flights, measure the error, confirm the confidence intervals are honest, and check it beats a naive baseline — all with careful data splitting so the scores aren't inflated.
 
 ## Repository layout
 
@@ -75,16 +127,24 @@ A note on the second source (assumed to be FlightRadar24): it is currently treat
 
 ## Implementation plan
 
-Build in stages so every layer is validated before the next is added. Each stage is independently shippable and the earlier (physics) stages remain the explainable anchors for the later (learned) ones.
+The system is built in stages, deliberately ordered so that the parts that can *silently corrupt every result* are built and proven correct first, before any estimator depends on them. Each stage is independently shippable and testable, and the earlier physics stages stay in place as the explainable anchor for the later learned stages. Detailed, checkbox-level tasks live in **[tasks.md](.kiro/specs/touchdown-point-detection/tasks.md)**.
 
-1. **Geometry, datum, and mapping — with unit tests first.** These are the parts that *silently bias everything*: centerline projection (geodesic/ENU, not Euclidean), geoid correction, lever-arm + pitch correction, kinematic interpolation. Establish the QAR clock-offset audit here too. Get this provably right before any estimator exists.
-2. **Coarse bracket + trajectory classification.** Flag-independent touchdown bracketing; reject go-arounds, tag touch-and-goes.
-3. **Physics + change-point baselines.** Deceleration-knee and PELT/CUSUM give a validated error floor and surface data-quality problems early.
-4. **LightGBM feature model.** First strong, interpretable learned result.
-5. **Sequence model (TCN/BiLSTM, soft labels).** Measure the lift over the baselines.
-6. **Fusion + uncertainty calibration**, then the full stratified, cross-source validation report.
+1. **Geometry, datum, and mapping — tested first.** The unglamorous foundation: projecting a position onto the runway centerline (using proper curved-earth geodesy, not flat-earth shortcuts), correcting the runway elevation into the right altitude datum, correcting for the antenna-to-wheels offset, and reconstructing position between samples. A small error here biases *every* landing in the same direction without ever throwing an error, so each piece ships with its own correctness tests before anything is built on top of it. *What "done" looks like: projection round-trips to within 0.1 m, and bad runway data is rejected cleanly.*
+2. **Coarse bracket + trajectory classification.** Decide landing vs go-around vs touch-and-go, and draw the rough touchdown time window every later check relies on. *Done: go-arounds produce no touchdown; a bounce is anchored to the first contact, not an average.*
+3. **Physics + change-point baselines.** The deceleration-knee and statistical change-point estimators. These are interpretable and give a trustworthy accuracy floor, and they surface real data-quality problems early. *Done: a first end-to-end estimate exists and beats the naive baseline.*
+4. **LightGBM feature model.** The first machine-learned estimator — gradient-boosted trees on engineered features. Strong, fast, and still interpretable (you can see which features mattered). *Done: measurable improvement over the physics baseline.*
+5. **Sequence model (TCN/BiLSTM).** A deep model over the whole landing window, trained with soft labels, expected to be the most accurate. *Done: its lift over the simpler models is quantified.*
+6. **Fusion + uncertainty calibration, then full validation.** Blend the estimators, make the confidence intervals honest (so a "90%" interval really covers ~90%), and produce the full stratified, cross-source accuracy report. *Done: calibrated intervals and a complete validation report against QAR truth.*
 
 Suggested stack: Python 3.11+, NumPy/SciPy/pandas, `pyproj` (geodesy + geoid), `ruptures` (PELT/CUSUM), `filterpy` (Kalman/IMM), `scikit-learn`, `lightgbm`, PyTorch (sequence model), `pytest` + `hypothesis` (tests).
+
+### Progress so far
+
+- ✅ **Stage 0 — Foundations.** Project scaffolding, the shared data models, and a fully validated, configuration-driven settings module (every tunable lives in YAML, not in code).
+- 🚧 **Stage 1 — Geometry (in progress).** Runway centerline projection and runway-reference validation are implemented and tested (geodesic round-trip within 0.1 m). Vertical datum (geoid) correction and the lever-arm correction are next.
+- ⏳ **Stages 2–6** — not yet started.
+
+The suite currently stands at 91 passing tests. Raw input schemas for both the ADS-B timeseries and the QAR truth data are also defined to anchor the ingest work.
 
 ## Testing with data
 

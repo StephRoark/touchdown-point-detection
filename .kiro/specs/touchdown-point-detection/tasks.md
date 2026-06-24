@@ -102,7 +102,7 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - [x] 4.4 Write property test P18 (random invalid runway inputs → rejected) and edge tests (heading 0°/360° wrap, distance exactly 0 at threshold).
   - _Requirements: 2.1, 2.2, 11.1, 11.3, 11.4, 11.5, 11.6; Properties 1, 18_
 
-- [ ] 5. Implement vertical datum unification (geoid correction)
+- [x] 5. Implement vertical datum unification (geoid correction)
   - Load the configured geoid model (EGM2008) and convert an MSL/orthometric runway elevation to HAE by adding the local undulation; tag the datum and never compare MSL elevation directly against HAE geometric altitude. Emit `DATUM_UNRESOLVED` when the datum/undulation cannot be resolved.
   - Write property test P19 (synthetic crossing with known undulation recovers correct height; MSL and HAE inputs agree after correction).
   - _Requirements: 11.1, 11.2; Property 19_
