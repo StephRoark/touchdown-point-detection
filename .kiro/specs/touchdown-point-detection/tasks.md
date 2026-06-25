@@ -166,7 +166,7 @@ Tasks within the same wave have no dependencies on each other and may be execute
 
 ### Stage 4 — Learned estimators
 
-- [ ] 15. Implement the LightGBM window-feature estimator (`tdz.estimators.learned`)
+- [x] 15. Implement the LightGBM window-feature estimator (`tdz.estimators.learned`)
   - Train gradient-boosted trees on engineered window features; output touchdown-time offset and a quantile pair for uncertainty; expose feature importances; emit the common contract.
   - _Requirements: 5.3_
 
