@@ -41,6 +41,7 @@ __all__ = [
     "GeodesyConfig",
     "VerticalCrossingConfig",
     "ValidationConfig",
+    "ProvisionalAccuracyTargets",
     "OutputConfig",
     "TDZConfig",
 ]
@@ -196,15 +197,70 @@ class VerticalCrossingConfig:
 
 
 @dataclass
+class ProvisionalAccuracyTargets:
+    """Provisional accuracy targets used for below-target flagging (Req 13).
+
+    **PROVISIONAL.** These are *reporting* targets, not pass/fail gates: until
+    they are ratified against the empirically characterized cadence-limited
+    error floor (Req 13.0), the harness reports observed metrics against them
+    and *flags* below-target strata rather than failing (Req 13.5). Every value
+    is in feet or percent, matching :class:`~tdz.models.ValidationMetrics`.
+    """
+
+    distance_rmse_ft: float                 # Overall RMSE target (Req 13.1; <=250 ft provisional)
+    distance_p95_abs_error_ft: float        # 95th-pct absolute error target (Req 13.3; <=400 ft)
+    distance_p95_long_side_ft: float        # 95th-pct positive/long-side error cap (Req 13.3; <=500 ft)
+    median_signed_error_abs_ft: float       # |median signed error| bias cap (Req 13.2; <=75 ft)
+    baseline_improvement_pct: float         # Min RMSE reduction vs naive baseline (Req 13.4; >=30%)
+
+
+@dataclass
 class ValidationConfig:
     primary_split_key: str                  # "tail" | "airport" | "runway"
     generalization_evals: list[str]
     use_calibration_split: bool
+    # Primary three-way grouped-split fractions (train / calibration / test).
+    # Whole groups (under primary_split_key) are assigned to exactly one part;
+    # fractions are of the *group* population and are normalized by their sum
+    # (Req 12.2, 12.4). Driven by the master random seed for reproducibility.
+    train_fraction: float
+    calibration_fraction: float
+    test_fraction: float
     min_stratum_size: int
     cross_source: bool
     clock_offset_max_s: float
     clock_drift_max_s: float
+    clock_xcorr_resample_dt_s: float
+    clock_max_lag_search_s: float
+    clock_min_overlap_s: float
+    clock_min_peak_correlation: float
+    clock_drift_segments: int
     wrong_runway_lateral_margin_ft: float
+    # Approach-speed-band edges (knots) used to bucket flights for stratified
+    # metric reporting (Req 12.7). Strictly increasing; N edges define N+1 bands
+    # ("<e0", "e0-e1", ..., ">=e_{N-1}"). Reporting-only -- these never enter
+    # estimation numerics. Defaulted so existing constructors remain valid.
+    approach_speed_band_edges_kt: tuple[float, ...] = (120.0, 140.0, 160.0)
+    # Empirical-coverage acceptance band for the reported 90% CIs (Req 4.3, 4.4).
+    # Coverage inside [coverage_min, coverage_max] is acceptable; below
+    # coverage_min is undercovered (unsafe); above coverage_max is overcovered
+    # (uninformative). Reporting-only -- never enters estimation numerics.
+    coverage_min: float = 0.85
+    coverage_max: float = 0.95
+    # Minimum stratum size for below-target flagging (Req 13.5). Distinct from
+    # min_stratum_size (the >=30 reporting gate in 22.2): a stratum is only
+    # flagged below-target when it holds at least this many flights.
+    below_target_min_flights: int = 200
+    # Provisional accuracy targets (Req 13) used for below-target flagging.
+    provisional_targets: "ProvisionalAccuracyTargets" = field(
+        default_factory=lambda: ProvisionalAccuracyTargets(
+            distance_rmse_ft=250.0,
+            distance_p95_abs_error_ft=400.0,
+            distance_p95_long_side_ft=500.0,
+            median_signed_error_abs_ft=75.0,
+            baseline_improvement_pct=30.0,
+        )
+    )
 
 
 @dataclass

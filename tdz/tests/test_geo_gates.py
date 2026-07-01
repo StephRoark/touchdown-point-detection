@@ -60,10 +60,18 @@ def _validation_config(margin_ft: float = 50.0) -> ValidationConfig:
         primary_split_key="tail",
         generalization_evals=["airport", "runway"],
         use_calibration_split=True,
+        train_fraction=0.70,
+        calibration_fraction=0.15,
+        test_fraction=0.15,
         min_stratum_size=30,
         cross_source=True,
         clock_offset_max_s=2.0,
         clock_drift_max_s=1.0,
+        clock_xcorr_resample_dt_s=0.1,
+        clock_max_lag_search_s=10.0,
+        clock_min_overlap_s=20.0,
+        clock_min_peak_correlation=0.5,
+        clock_drift_segments=3,
         wrong_runway_lateral_margin_ft=margin_ft,
     )
 

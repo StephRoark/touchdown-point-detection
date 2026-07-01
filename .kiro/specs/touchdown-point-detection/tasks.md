@@ -199,16 +199,16 @@ Tasks within the same wave have no dependencies on each other and may be execute
 
 ### Stage 6 — Validation, reproducibility, and reporting
 
-- [ ] 21. Implement QAR clock alignment (`tdz.validation`)
+- [x] 21. Implement QAR clock alignment (`tdz.validation`)
   - Estimate per-flight QAR↔ADS-B offset by cross-correlating an overlapping kinematic series (groundspeed/along-track position), never on touchdown itself; detect within-flight drift and flag beyond a configurable bound; apply the offset to QAR timestamps for time-domain labels/metrics only; report the offset distribution (median, SD, p95); exclude flights exceeding the threshold (default 2 s) or with unreliable offsets from time-domain training/validation (`CLOCK_OFFSET_EXCEEDED`), retaining them for distance validation.
   - Write property test P16 (offset > 2 s → excluded and in flagged-flights report) and the synthetic known-offset recovery test.
   - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7; Property 16_
 
-- [ ] 22. Implement grouped splits and the validation harness
-  - [ ] 22.1 Implement the tail-grouped primary split plus disjoint calibration partition, and separate held-out-airport and held-out-runway evaluations (reported separately, not intersected). Write property test P10 (no tail leakage; calibration disjoint; held-out airport/runway absent from training).
-  - [ ] 22.2 Compute clock-independent along-runway distance truth from QAR lat/long; compute metrics (signed/absolute distance error, RMSE, median, IQR, p95/p99 absolute, p95 long-side signed, time error) stratified by aircraft type, source, airport, approach-speed band (≥30 flights/stratum); report system vs naive baseline side-by-side.
-  - [ ] 22.3 Implement cross-source evaluation (train on one source, test on the other, both directions) using flights present in both feeds to isolate the source effect; report accuracy drop vs same-source.
-  - [ ] 22.4 Implement coverage assessment (90% CI → 85–95%) on the calibration split; characterize and report the cadence-limited error floor; flag below-target strata (≥200 flights) against the provisional targets without hard-failing.
+- [x] 22. Implement grouped splits and the validation harness
+  - [x] 22.1 Implement the tail-grouped primary split plus disjoint calibration partition, and separate held-out-airport and held-out-runway evaluations (reported separately, not intersected). Write property test P10 (no tail leakage; calibration disjoint; held-out airport/runway absent from training).
+  - [x] 22.2 Compute clock-independent along-runway distance truth from QAR lat/long; compute metrics (signed/absolute distance error, RMSE, median, IQR, p95/p99 absolute, p95 long-side signed, time error) stratified by aircraft type, source, airport, approach-speed band (≥30 flights/stratum); report system vs naive baseline side-by-side.
+  - [x] 22.3 Implement cross-source evaluation (train on one source, test on the other, both directions) using flights present in both feeds to isolate the source effect; report accuracy drop vs same-source.
+  - [x] 22.4 Implement coverage assessment (90% CI → 85–95%) on the calibration split; characterize and report the cadence-limited error floor; flag below-target strata (≥200 flights) against the provisional targets without hard-failing.
   - _Requirements: 4.3, 4.4, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10, 13.0, 13.1, 13.2, 13.3, 13.4, 13.5; Property 10_
 
 - [ ] 23. Implement reproducibility and provenance

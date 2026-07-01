@@ -102,10 +102,28 @@ validation:
   primary_split_key: "tail"         # Leakage control (headline metrics)
   generalization_evals: ["airport", "runway"]  # Reported separately, not intersected
   use_calibration_split: true       # Three-way train/calibration/test for interval calibration
+  train_fraction: 0.70              # Group-population fraction assigned to train (grouped by primary_split_key)
+  calibration_fraction: 0.15        # Group-population fraction reserved for interval calibration (disjoint from train/test)
+  test_fraction: 0.15               # Group-population fraction held out for headline test metrics
   min_stratum_size: 30
   cross_source: true
+  approach_speed_band_edges_kt: [120.0, 140.0, 160.0]  # Report-only bands: <120 / 120-140 / 140-160 / >=160 kt (Req 12.7)
+  coverage_min: 0.85                 # Empirical-coverage acceptance band lower edge for 90% CIs (Req 4.3, 4.4); below = undercovered/unsafe
+  coverage_max: 0.95                 # Acceptance band upper edge; above = overcovered/uninformative
+  below_target_min_flights: 200      # Min flights before a stratum is flagged below-target (Req 13.5; distinct from the 30-flight reporting gate)
+  provisional_targets:               # PROVISIONAL reporting targets (Req 13); flagged, never hard-failed, until ratified vs the cadence floor (Req 13.0)
+    distance_rmse_ft: 250            # Overall along-runway RMSE target (Req 13.1)
+    distance_p95_abs_error_ft: 400   # 95th-percentile absolute error target (Req 13.3)
+    distance_p95_long_side_ft: 500   # 95th-percentile positive/long-side signed error cap (Req 13.3)
+    median_signed_error_abs_ft: 75   # |median signed error| bias cap per type (Req 13.2)
+    baseline_improvement_pct: 30     # Minimum RMSE reduction vs naive baseline (Req 13.4)
   clock_offset_max_s: 2.0            # Time-domain exclusion only; confirm vs observed distribution
   clock_drift_max_s: 1.0
+  clock_xcorr_resample_dt_s: 0.1     # Common-grid resample step for kinematic cross-correlation (s)
+  clock_max_lag_search_s: 10.0       # Max absolute lag searched during cross-correlation (s)
+  clock_min_overlap_s: 20.0          # Minimum overlapping series duration for a reliable estimate (s)
+  clock_min_peak_correlation: 0.5    # Minimum normalized cross-correlation peak to trust an estimate
+  clock_drift_segments: 3            # Sub-windows used to detect within-flight clock drift
   wrong_runway_lateral_margin_ft: 50 # + runway half-width before flagging suspected wrong runway
 
 output:
