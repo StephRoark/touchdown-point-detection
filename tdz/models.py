@@ -364,6 +364,7 @@ class FailureReason(Enum):
     SPARSE_NEAR_TD = "sparse_near_touchdown"            # <3 samples within 30s but >=3 within 60s
     WIDE_CONFIDENCE_INTERVAL = "wide_ci"                # 90% CI width > 600 ft (configurable)
     MISSING_VERTICAL_RATE = "missing_vertical_rate"     # Baro VR null; subset of estimators used
+    IMPLAUSIBLE_SPEED = "implausible_speed"             # Interpolated groundspeed outside 50-220 kt / velocity samples missing near t_td (Req 3.4)
     # MISSING_LEVER_ARM: class-median default applied; distance CI widened.
     # (Design listed this code twice; deduplicated to a single member here.)
     MISSING_LEVER_ARM = "missing_lever_arm"

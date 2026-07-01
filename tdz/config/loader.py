@@ -45,6 +45,7 @@ from tdz.config.schema import (
     SignalsConfig,
     TDZConfig,
     TimebaseConfig,
+    UncertaintyConfig,
     ValidationConfig,
     VerticalCrossingConfig,
 )
@@ -272,6 +273,23 @@ def _resolve_fusion(data: dict, resolved: dict) -> FusionConfig:
     return cfg
 
 
+def _resolve_uncertainty(data: dict, resolved: dict) -> UncertaintyConfig:
+    raw = _section_dict(data, "uncertainty")
+    out: dict = {}
+    cfg = UncertaintyConfig(
+        coverage_target=_scalar(raw, out, "uncertainty", "coverage_target", float, 0.90, minimum=0.5, maximum=0.999),
+        nominal_cadence_s=_scalar(raw, out, "uncertainty", "nominal_cadence_s", float, 5.0, minimum=0.01, maximum=60.0),
+        gap_window_half_width_s=_scalar(raw, out, "uncertainty", "gap_window_half_width_s", float, 30.0, minimum=0.0, maximum=600.0),
+        gap_min_duration_s=_scalar(raw, out, "uncertainty", "gap_min_duration_s", float, 10.0, minimum=0.0, maximum=600.0),
+        missing_lever_arm_widening_factor=_scalar(raw, out, "uncertainty", "missing_lever_arm_widening_factor", float, 1.5, minimum=1.0, maximum=100.0),
+        post_transition_window_s=_scalar(raw, out, "uncertainty", "post_transition_window_s", float, 15.0, minimum=0.0, maximum=600.0),
+        min_post_transition_samples=_scalar(raw, out, "uncertainty", "min_post_transition_samples", int, 2, minimum=0, maximum=1000),
+        starvation_widening_factor=_scalar(raw, out, "uncertainty", "starvation_widening_factor", float, 1.5, minimum=1.0, maximum=100.0),
+    )
+    resolved["uncertainty"] = out
+    return cfg
+
+
 def _resolve_quality_gates(data: dict, resolved: dict) -> QualityGatesConfig:
     raw = _section_dict(data, "quality_gates")
     out: dict = {}
@@ -466,6 +484,10 @@ def _resolve_output(data: dict, resolved: dict) -> OutputConfig:
         distance_units=_scalar(raw, out, "output", "distance_units", str, "feet", choices=frozenset({"feet", "meters"})),
         speed_units=_scalar(raw, out, "output", "speed_units", str, "knots", choices=frozenset({"knots", "mps"})),
         time_precision_decimals=_scalar(raw, out, "output", "time_precision_decimals", int, 3, minimum=0, maximum=12),
+        speed_min_kt=_scalar(raw, out, "output", "speed_min_kt", float, 50.0, minimum=0.0, maximum=1000.0),
+        speed_max_kt=_scalar(raw, out, "output", "speed_max_kt", float, 220.0, minimum=0.0, maximum=1000.0),
+        speed_resolution_kt=_scalar(raw, out, "output", "speed_resolution_kt", float, 0.1, minimum=0.001, maximum=10.0),
+        speed_velocity_gap_max_s=_scalar(raw, out, "output", "speed_velocity_gap_max_s", float, 10.0, minimum=0.0, maximum=600.0),
     )
     resolved["output"] = out
     return cfg
@@ -492,6 +514,7 @@ def build_config(data: dict) -> TDZConfig:
         signals=_resolve_signals(data, resolved),
         estimators=_resolve_estimators(data, resolved),
         fusion=_resolve_fusion(data, resolved),
+        uncertainty=_resolve_uncertainty(data, resolved),
         quality_gates=_resolve_quality_gates(data, resolved),
         lever_arms=_resolve_lever_arms(data, resolved),
         geodesy=_resolve_geodesy(data, resolved),
