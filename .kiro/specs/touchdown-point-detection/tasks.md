@@ -187,12 +187,12 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - [x] 18.3 Write property tests P14 (high-sigma down-weighting) and P5 (fused `t_td` respects on-ground bound).
   - _Requirements: 5.4, 5.5, 5.6, 18.4; Properties 5, 14_
 
-- [ ] 19. Implement uncertainty quantification and calibration
+- [x] 19. Implement uncertainty quantification and calibration
   - Produce 90% CIs for time (s) and distance (ft); widen CIs proportionally to gap duration / nominal cadence within ±30 s of touchdown; widen for missing-lever-arm and post-transition sample starvation; conformalize intervals on the calibration split to hit 85–95% empirical coverage; flag low-confidence rather than suppress when a reliable interval cannot be computed.
   - Write property tests P6 (CI validity: lower < point < upper, positive width) and P7 (gap-proportional widening).
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 9.2, 9.6; Properties 6, 7_
 
-- [ ] 20. Implement time→position mapping and the full output record (`tdz.geo` + assembler)
+- [x] 20. Implement time→position mapping and the full output record (`tdz.geo` + assembler)
   - Interpolate the trajectory at fused `t_td` to compute along-runway distance, lateral offset, and groundspeed at touchdown (50–220 kt, 0.1 kt resolution, from interpolation not nearest sample); propagate `t_td` uncertainty into speed CI; apply lever-arm correction; convert SI→feet/knots at this boundary only; assemble `TouchdownResult` with all confidence/diagnostic/provenance fields.
   - Write property test P17 (output completeness: exactly one confidence class; reason code present when not normal; all primary fields populated otherwise) and the end-to-end synthetic-flight integration test.
   - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.3, 3.4, 14.1, 14.2, 14.3, 14.4; Property 17_

@@ -82,6 +82,12 @@ from tdz.geo.lever_arm import (
     resolve_lever_arm,
     resolve_lever_arm_correction,
 )
+from tdz.geo.mapping import (
+    TouchdownMapping,
+    groundspeed_slope_mps2,
+    map_touchdown,
+    velocity_samples_within,
+)
 from tdz.geo.projection import (
     ProjectedPosition,
     RunwayProjector,
@@ -103,6 +109,10 @@ __all__ = [
     "resolve_lever_arm",
     "resolve_lever_arm_correction",
     "compute_lever_arm_range_widening",
+    "TouchdownMapping",
+    "map_touchdown",
+    "groundspeed_slope_mps2",
+    "velocity_samples_within",
     "evaluate_position_gates",
     "PositionGateResult",
     "is_suspected_wrong_runway",

@@ -36,6 +36,17 @@ fusion:
   low_confidence_ci_width_s: 8.0    # Time-domain analog: flag if fused 90% CI width exceeds this (seconds)
   disagreement_threshold_s: 3.0     # Flag ESTIMATOR_DISAGREEMENT if inter-estimator spread (1-sigma) exceeds this (seconds)
 
+uncertainty:
+  # Uncertainty quantification and calibration (Task 19; Req 4.x, 9.2, 9.6).
+  coverage_target: 0.90              # Target empirical coverage for the reported 90% CIs (conformalized to 85–95%)
+  nominal_cadence_s: 5.0             # Nominal ADS-B sample interval C used for gap-proportional widening (Req 9.2)
+  gap_window_half_width_s: 30.0      # Only gaps within ±this window of t_td widen the interval (Req 9.2)
+  gap_min_duration_s: 10.0           # Only gaps exceeding this duration trigger widening (Req 9.2)
+  missing_lever_arm_widening_factor: 1.5   # Distance-CI widening when a class-median lever arm was substituted (Req 7.5)
+  post_transition_window_s: 15.0     # Window after the on-ground transition to look for ground-roll samples (Req 9.6)
+  min_post_transition_samples: 2     # Fewer than this many valid post-transition position samples -> starvation widening (Req 9.6)
+  starvation_widening_factor: 1.5    # CI widening applied on post-transition sample starvation (Req 9.6)
+
 quality_gates:
   min_samples_near_td: 3
   max_gap_spanning_td_s: 15
@@ -101,3 +112,7 @@ output:
   distance_units: "feet"
   speed_units: "knots"
   time_precision_decimals: 3
+  speed_min_kt: 50.0                  # Plausible touchdown-speed lower bound (Req 3.1)
+  speed_max_kt: 220.0                 # Plausible touchdown-speed upper bound (Req 3.1)
+  speed_resolution_kt: 0.1            # Reported groundspeed resolution (Req 3.1)
+  speed_velocity_gap_max_s: 10.0      # Flag speed low-confidence if no velocity sample within this window of t_td (Req 3.4)

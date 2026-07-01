@@ -34,6 +34,7 @@ __all__ = [
     "SignalsConfig",
     "EstimatorsConfig",
     "FusionConfig",
+    "UncertaintyConfig",
     "QualityGatesConfig",
     "ClassMedian",
     "LeverArmsConfig",
@@ -127,6 +128,28 @@ class FusionConfig:
 
 
 @dataclass
+class UncertaintyConfig:
+    """Uncertainty quantification / calibration knobs (Task 19).
+
+    Governs conformal calibration (``coverage_target``), gap-proportional
+    interval widening (``nominal_cadence_s``, ``gap_window_half_width_s``,
+    ``gap_min_duration_s``; Req 9.2), missing-lever-arm distance-CI widening
+    (``missing_lever_arm_widening_factor``; Req 7.5), and post-transition
+    sample-starvation widening (``post_transition_window_s``,
+    ``min_post_transition_samples``, ``starvation_widening_factor``; Req 9.6).
+    """
+
+    coverage_target: float                  # Target empirical coverage for reported CIs (e.g. 0.90)
+    nominal_cadence_s: float                # Nominal ADS-B sample interval C (seconds) for gap widening
+    gap_window_half_width_s: float          # Consider gaps within ±this window of t_td (seconds)
+    gap_min_duration_s: float               # Only gaps exceeding this duration widen the interval (seconds)
+    missing_lever_arm_widening_factor: float  # Distance-CI widening factor when a class-median lever arm is used
+    post_transition_window_s: float         # Window after on-ground transition to look for ground-roll samples (seconds)
+    min_post_transition_samples: int        # Fewer than this many post-transition samples -> starvation widening
+    starvation_widening_factor: float       # CI widening factor applied on post-transition sample starvation
+
+
+@dataclass
 class QualityGatesConfig:
     min_samples_near_td: int
     max_gap_spanning_td_s: float
@@ -186,9 +209,22 @@ class ValidationConfig:
 
 @dataclass
 class OutputConfig:
+    """Output-boundary presentation knobs (Task 20).
+
+    This is the single SI->presentation conversion point in the pipeline. The
+    speed plausibility band (``speed_min_kt`` / ``speed_max_kt``), the reported
+    speed resolution (``speed_resolution_kt``), and the window within which
+    velocity samples must exist for a confident touchdown speed
+    (``speed_velocity_gap_max_s``) are all tunables governing Req 3.1 / 3.4.
+    """
+
     distance_units: str                     # "feet" | "meters"
     speed_units: str                        # "knots" | "mps"
     time_precision_decimals: int
+    speed_min_kt: float                     # Lower bound of the plausible touchdown-speed band (knots; Req 3.1)
+    speed_max_kt: float                     # Upper bound of the plausible touchdown-speed band (knots; Req 3.1)
+    speed_resolution_kt: float              # Reported groundspeed resolution (knots; Req 3.1)
+    speed_velocity_gap_max_s: float         # Flag speed low-confidence if no velocity sample within this window of t_td (seconds; Req 3.4)
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +246,7 @@ class TDZConfig:
     signals: SignalsConfig
     estimators: EstimatorsConfig
     fusion: FusionConfig
+    uncertainty: UncertaintyConfig
     quality_gates: QualityGatesConfig
     lever_arms: LeverArmsConfig
     geodesy: GeodesyConfig
