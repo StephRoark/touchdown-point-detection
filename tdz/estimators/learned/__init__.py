@@ -40,11 +40,48 @@ from tdz.estimators.learned.lightgbm_estimator import (
     METHOD_NAME,
     LightGbmTouchdownEstimator,
 )
+from tdz.estimators.learned.sequence_model import (
+    CONTINUOUS_CHANNEL_NAMES,
+    FLAG_CHANNEL_NAMES,
+    SequenceInput,
+    SequenceModelEstimator,
+    build_sequence_input,
+)
+from tdz.estimators.learned.sequence_model import METHOD_NAME as SEQUENCE_METHOD_NAME
+from tdz.estimators.learned.hybrid_residual import (
+    HybridResidualEstimator,
+)
+from tdz.estimators.learned.hybrid_residual import METHOD_NAME as HYBRID_RESIDUAL_METHOD_NAME
+from tdz.estimators.learned.fallback import (
+    DEFAULT_PHYSICS_FALLBACK_THRESHOLD,
+    LEARNED_PRIMARY,
+    PHYSICS_PRIMARY,
+    PrimaryWithAnchor,
+    RareTypePhysicsFallback,
+    training_flight_counts,
+)
 
 __all__ = [
-    # Estimator (Task 15)
+    # LightGBM estimator (Task 15)
     "LightGbmTouchdownEstimator",
     "METHOD_NAME",
+    # Sequence model (Task 16)
+    "SequenceModelEstimator",
+    "SEQUENCE_METHOD_NAME",
+    "SequenceInput",
+    "build_sequence_input",
+    "CONTINUOUS_CHANNEL_NAMES",
+    "FLAG_CHANNEL_NAMES",
+    # Hybrid-residual estimator (Task 17; Req 5.3/6.2)
+    "HybridResidualEstimator",
+    "HYBRID_RESIDUAL_METHOD_NAME",
+    # Rare-type physics fallback (Task 16; Req 6.2/6.3/6.4)
+    "RareTypePhysicsFallback",
+    "PrimaryWithAnchor",
+    "training_flight_counts",
+    "PHYSICS_PRIMARY",
+    "LEARNED_PRIMARY",
+    "DEFAULT_PHYSICS_FALLBACK_THRESHOLD",
     # Feature extraction
     "extract_window_features",
     "WindowFeatures",

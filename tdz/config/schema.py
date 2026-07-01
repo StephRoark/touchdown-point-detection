@@ -120,8 +120,10 @@ class EstimatorsConfig:
 @dataclass
 class FusionConfig:
     method: str                     # "stacking" | "weighted_blend"
-    confidence_threshold_sigma: float
-    low_confidence_ci_width_ft: float
+    confidence_threshold_sigma: float       # Exclude/down-weight estimator if sigma_t exceeds this (seconds)
+    low_confidence_ci_width_ft: float        # Flag WIDE_CONFIDENCE_INTERVAL if mapped distance 90% CI width exceeds this (feet)
+    low_confidence_ci_width_s: float         # Time-domain analog: flag WIDE_CONFIDENCE_INTERVAL if fused 90% CI width exceeds this (seconds)
+    disagreement_threshold_s: float          # Flag ESTIMATOR_DISAGREEMENT if inter-estimator spread (1-sigma) exceeds this (seconds)
 
 
 @dataclass

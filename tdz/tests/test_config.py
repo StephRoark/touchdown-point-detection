@@ -173,6 +173,8 @@ def test_valid_config_round_trips_all_sections():
     assert cfg.fusion.method == "stacking"
     assert cfg.fusion.confidence_threshold_sigma == 5.0
     assert cfg.fusion.low_confidence_ci_width_ft == 600.0
+    assert cfg.fusion.low_confidence_ci_width_s == 8.0
+    assert cfg.fusion.disagreement_threshold_s == 3.0
     assert cfg.quality_gates.max_longitudinal_accel_g == 1.0
     assert cfg.quality_gates.duplicate_timestamp_tolerance_s == 0.1
     assert cfg.geodesy.geoid_model == "EGM2008"

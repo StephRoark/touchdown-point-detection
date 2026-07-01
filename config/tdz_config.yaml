@@ -31,8 +31,10 @@ estimators:
 
 fusion:
   method: "stacking"                # "stacking" | "weighted_blend"
-  confidence_threshold_sigma: 5.0   # Exclude estimator if sigma_t exceeds this
-  low_confidence_ci_width_ft: 600   # Flag if 90% CI width exceeds this
+  confidence_threshold_sigma: 5.0   # Exclude estimator if sigma_t exceeds this (seconds)
+  low_confidence_ci_width_ft: 600   # Flag if mapped distance 90% CI width exceeds this (feet)
+  low_confidence_ci_width_s: 8.0    # Time-domain analog: flag if fused 90% CI width exceeds this (seconds)
+  disagreement_threshold_s: 3.0     # Flag ESTIMATOR_DISAGREEMENT if inter-estimator spread (1-sigma) exceeds this (seconds)
 
 quality_gates:
   min_samples_near_td: 3
