@@ -170,21 +170,21 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - Train gradient-boosted trees on engineered window features; output touchdown-time offset and a quantile pair for uncertainty; expose feature importances; emit the common contract.
   - _Requirements: 5.3_
 
-- [ ] 16. Implement the TCN/BiLSTM sequence model
+- [x] 16. Implement the TCN/BiLSTM sequence model
   - Train over the landing window using physics-derived channels + time-delta + static context (aircraft type/source embeddings) with soft Gaussian labels centered on QAR touchdown time; output per-timestep P(touchdown) → expected value `t_td` and distribution-width uncertainty; optional deep ensemble for epistemic uncertainty.
   - Implement the rare-type physics fallback: for aircraft types with < 50 QAR-labeled flights, use the physics estimator as primary (and omit a learned estimate); always include the physics anchor `t_td`/diagnostics in the record. Write property test P15.
   - _Requirements: 5.3, 6.2, 6.3, 6.4; Property 15_
 
-- [ ] 17. Implement the optional hybrid-residual model
+- [x] 17. Implement the optional hybrid-residual model
   - Train the learned model to predict the residual of a physics estimate rather than absolute time, keeping a physical backbone.
   - _Requirements: 5.3, 6.2_
 
 ### Stage 5 — Fusion and uncertainty calibration
 
-- [ ] 18. Implement the fusion ensemble (`tdz.fusion`)
-  - [ ] 18.1 Combine ≥3 estimator families (physics, change-point, learned) via calibrated stacking / weighted blend into a single `t_td` with a predictive interval; record contributing/excluded estimators per flight.
-  - [ ] 18.2 Down-weight or exclude estimators reporting `sigma_t` above the confidence threshold or a failure diagnostic; give the on-ground flag zero weight; emit no-estimate (`ALL_ESTIMATORS_FAILED`) when all fail; flag `WIDE_CONFIDENCE_INTERVAL` when CI width exceeds threshold and `ESTIMATOR_DISAGREEMENT` on high variance.
-  - [ ] 18.3 Write property tests P14 (high-sigma down-weighting) and P5 (fused `t_td` respects on-ground bound).
+- [x] 18. Implement the fusion ensemble (`tdz.fusion`)
+  - [x] 18.1 Combine ≥3 estimator families (physics, change-point, learned) via calibrated stacking / weighted blend into a single `t_td` with a predictive interval; record contributing/excluded estimators per flight.
+  - [x] 18.2 Down-weight or exclude estimators reporting `sigma_t` above the confidence threshold or a failure diagnostic; give the on-ground flag zero weight; emit no-estimate (`ALL_ESTIMATORS_FAILED`) when all fail; flag `WIDE_CONFIDENCE_INTERVAL` when CI width exceeds threshold and `ESTIMATOR_DISAGREEMENT` on high variance.
+  - [x] 18.3 Write property tests P14 (high-sigma down-weighting) and P5 (fused `t_td` respects on-ground bound).
   - _Requirements: 5.4, 5.5, 5.6, 18.4; Properties 5, 14_
 
 - [ ] 19. Implement uncertainty quantification and calibration

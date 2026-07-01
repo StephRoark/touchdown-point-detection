@@ -140,11 +140,49 @@ Suggested stack: Python 3.11+, NumPy/SciPy/pandas, `pyproj` (geodesy + geoid), `
 
 ### Progress so far
 
-- ✅ **Stage 0 — Foundations.** Project scaffolding, the shared data models, and a fully validated, configuration-driven settings module (every tunable lives in YAML, not in code).
-- 🚧 **Stage 1 — Geometry (in progress).** Runway centerline projection and runway-reference validation are implemented and tested (geodesic round-trip within 0.1 m). Vertical datum (geoid) correction and the lever-arm correction are next.
-- ⏳ **Stages 2–6** — not yet started.
+- ✅ **Stage 0 — Foundations.** Project scaffolding, shared data models, and a fully validated, configuration-driven settings module (every tunable lives in YAML, not in code).
+- ✅ **Stage 1 — Geometry, datum, and mapping.** Geodesic runway-centerline projection + reference validation, geoid (MSL→HAE) datum unification, the pitch-resolved lever-arm correction, and the wrong-runway / out-of-bounds gates.
+- ✅ **Stage 2 — Timebase, ingest/QA, bracketing.** Async-timestamp-preserving kinematic interpolation, dual-source ingest with capability gating, QA/quality gates, and flag-independent trajectory classification + coarse bracket.
+- ✅ **Stage 3 — Physics + change-point baselines.** Decel-knee, flare-crossing, and IMM physics estimators; PELT/CUSUM/GLRT/jerk-onset change-point estimators; and a stage-1–3 baseline run that beats the naive first-on-ground strawman.
+- 🚧 **Stage 4 — Learned estimators (in progress).** The LightGBM window-feature estimator is implemented; the TCN/BiLSTM sequence model and hybrid residual are next.
+- ⏳ **Stages 5–6** — fusion, uncertainty calibration, mapping/output, and the full validation harness: not yet started.
 
-The suite currently stands at 91 passing tests. Raw input schemas for both the ADS-B timeseries and the QAR truth data are also defined to anchor the ingest work.
+The suite currently stands at 281 passing tests (1 skipped — a geoid-grid test that needs the optional EGM2008 grid). Raw input schemas for both the ADS-B timeseries and the QAR truth data are defined and feed the ingest layer.
+
+## Environment setup
+
+The project targets **Python 3.11+**. Create a virtual environment and install the package with its dependencies:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+```
+
+`.venv/` is git-ignored. Run the test suite with `.venv/bin/python -m pytest`.
+
+### System prerequisite: OpenMP (for LightGBM)
+
+`lightgbm` (the learned window-feature estimator) loads the OpenMP runtime `libomp` at import time, which is **not** a pip package — it must be installed at the system level, or `import lightgbm` will fail with a missing-`libomp.dylib` error.
+
+- **macOS (Homebrew):** `brew install libomp`. If Homebrew itself reports the macOS version as unsupported, run `brew update` first (a stale Homebrew predating your OS is the usual cause). On Intel Macs this lands at `/usr/local/opt/libomp`; on Apple Silicon at `/opt/homebrew/opt/libomp`. `libomp` is keg-only, which is expected — LightGBM finds it via the `opt` symlink. Do **not** hand-copy `libomp.dylib` into `/usr/local/opt/libomp` (a real directory there blocks the proper Homebrew install).
+- **Linux:** install your distro's OpenMP runtime (e.g. `libgomp1` on Debian/Ubuntu), or use the conda-forge `lightgbm` build which bundles it.
+- **conda (any OS):** `conda install -c conda-forge lightgbm` pulls in the OpenMP runtime automatically.
+
+### PyTorch (for the sequence model)
+
+The TCN/BiLSTM sequence estimator (Stage 4) needs **PyTorch**. A CPU build is sufficient for development and tests; install the wheel appropriate for your platform from the [official selector](https://pytorch.org/get-started/locally/) (e.g. `pip install torch`). It is a large download; the physics, change-point, and LightGBM estimators do not require it.
+
+#### Local development on Intel macOS (x86_64) — torch/NumPy bridge
+
+This is a **local-dev-only** caveat; it does **not** affect the production target (Azure Databricks, Linux x86_64).
+
+Apple dropped Intel-Mac PyTorch wheels after **torch 2.2.2**, which is therefore the newest installable build on an Intel Mac. That build was compiled against the NumPy **1.x** C-ABI, so under NumPy **2.x** its `torch.from_numpy` bridge fails to initialize (`_ARRAY_API not found`) and raises. The sequence model works around this with a small `_to_tensor` shim (`tdz/estimators/learned/sequence_model.py`) that falls back to a list round-trip when the fast path is unavailable — correct, just slower, and exercised **only** on this platform.
+
+Notes:
+
+- **Do not** add a project-wide `numpy<2` pin on account of this. The constraint is specific to the Intel-Mac dev box; capping NumPy would also collide with `scipy` (which requires `numpy>=2.0.0`).
+- On Linux/Databricks, torch 2.3+ supports NumPy 2.x and the zero-copy fast path is always taken — the shim's fallback branch never runs there, and it is not a pattern to copy into production code.
+- If you prefer the native bridge locally, pin a NumPy-1.x-compatible stack in the venv only (e.g. `numpy<2` **with** a `scipy<1.16`), but this is optional and should stay out of `pyproject.toml`.
 
 ## Testing with data
 

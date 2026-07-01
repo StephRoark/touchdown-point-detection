@@ -265,6 +265,8 @@ def _resolve_fusion(data: dict, resolved: dict) -> FusionConfig:
         method=_scalar(raw, out, "fusion", "method", str, "stacking", choices=frozenset({"stacking", "weighted_blend"})),
         confidence_threshold_sigma=_scalar(raw, out, "fusion", "confidence_threshold_sigma", float, 5.0, minimum=0.01, maximum=100.0),
         low_confidence_ci_width_ft=_scalar(raw, out, "fusion", "low_confidence_ci_width_ft", float, 600.0, minimum=0.0, maximum=100000.0),
+        low_confidence_ci_width_s=_scalar(raw, out, "fusion", "low_confidence_ci_width_s", float, 8.0, minimum=0.0, maximum=3600.0),
+        disagreement_threshold_s=_scalar(raw, out, "fusion", "disagreement_threshold_s", float, 3.0, minimum=0.0, maximum=600.0),
     )
     resolved["fusion"] = out
     return cfg
