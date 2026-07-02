@@ -65,6 +65,14 @@ from tdz.validation.splits import (
     make_primary_split,
     make_validation_splits,
 )
+from tdz.validation.milestone_report import (
+    CONFIDENCE_NORMAL,
+    SLICE_SELECTORS,
+    MilestoneReport,
+    RoomToImprove,
+    build_milestone_report,
+    compute_room_to_improve,
+)
 
 __all__ = [
     "QUALITY_GOOD",
@@ -112,4 +120,10 @@ __all__ = [
     "default_landing_key",
     "shared_landings",
     "evaluate_cross_source",
+    "CONFIDENCE_NORMAL",
+    "SLICE_SELECTORS",
+    "MilestoneReport",
+    "RoomToImprove",
+    "build_milestone_report",
+    "compute_room_to_improve",
 ]

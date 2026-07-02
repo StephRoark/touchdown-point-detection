@@ -191,6 +191,7 @@ def _resolve_pipeline(data: dict, resolved: dict) -> PipelineConfig:
     cfg = PipelineConfig(
         master_random_seed=_scalar(raw, out, "pipeline", "master_random_seed", int, 42, minimum=0, maximum=2**32 - 1),
         ads_b_source=_scalar(raw, out, "pipeline", "ads_b_source", str, "aireon", choices=ALLOWED_SOURCES),
+        deterministic_mode=_scalar(raw, out, "pipeline", "deterministic_mode", bool, True),
     )
     resolved["pipeline"] = out
     return cfg
