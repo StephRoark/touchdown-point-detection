@@ -8,6 +8,90 @@ For the authoritative specification see **[requirements.md](.kiro/specs/touchdow
 
 ---
 
+## The story version (start here if none of the words above meant anything)
+
+When an airplane lands, the spot where its wheels first touch the runway really matters. A runway is long, but not endless — if a plane touches down too far along it, or comes in too fast, there may not be enough pavement left to stop. That's how planes end up sliding off the end of runways, which you occasionally see on the news.
+
+Airlines would love to look back at thousands of old landings and ask: *which ones touched down too far, or too fast?* Those are the near-misses worth learning from before one becomes an accident. The trouble is, nobody stands at the runway with a clipboard writing down where each plane's wheels touched.
+
+Here's what we *do* have. Every airliner constantly calls out over the radio, "here I am, this is how fast I'm going" — automatically, about once every four or five seconds. Those messages get recorded. So for any landing, we have a trail of breadcrumbs leading down to the runway.
+
+But there's a catch: four seconds is a long time for a landing airplane. Between one radio call and the next, the plane travels about the length of *three football fields*. And the moment the wheels touch almost always happens *between* two calls — never exactly on one. So you can't just look up the answer. It's like trying to figure out the exact moment a pot of soup started boiling when you only peeked at the stove once every few minutes: you have to *work it out* from the clues on either side.
+
+That's what this project does. It works out the touchdown moment from the clues — the plane slows down suddenly once its wheels are rolling and the brakes bite; its height tapers down to the runway in a predictable curve — and it uses several different ways of guessing at once, then blends them, because each way stumbles on different landings.
+
+Two more things make it trustworthy rather than just clever:
+
+1. **We have an answer key.** For 40,500 landings, the airplane's own onboard recorder tells us where the wheels *really* touched. We grade every guessing method against those answers before trusting it on landings where there is no recorder.
+2. **Every answer admits how sure it is.** The system never just says "the plane touched down 1,500 feet in." It says "1,500 feet, give or take 200." For safety work, an honest *give-or-take* is as important as the number — a confident wrong answer is the most dangerous thing this kind of system can produce.
+
+That's the whole idea: use the breadcrumb trail every plane already broadcasts to find the exact touchdown spot, check ourselves against the flights where the true answer is known, and always say how confident we are — so safety people can find the risky landings hiding in a mountain of ordinary ones.
+
+## The executive summary
+
+Runway excursions — aircraft departing the runway surface on landing — are consistently among the top categories of serious commercial-aviation accidents, and the two leading precursors are touching down too far along the runway and touching down too fast. Today those precursors can only be measured on flights that carry and share flight-data-recorder (QAR) downloads: a minority of operations, unevenly distributed across fleets and operators.
+
+This system measures both precursors from **ADS-B surveillance data, which exists for essentially every flight**, at no additional cost of collection. Because touchdown is never directly reported in ADS-B, the system reconstructs it: multiple independent estimation methods (physics-based, statistical, and machine-learned) are combined, and every estimate carries a calibrated confidence interval, so analysts know not just *where* a landing touched down but *how much to trust that answer*. A library of 40,500 flights with matched recorder data serves as ground truth for calibration and for graded, audited accuracy claims — including an interpretable physics estimate alongside every machine-learned one, for regulator-facing explainability.
+
+**Status:** the full pipeline — ingestion, quality control, seven estimation methods, fusion, uncertainty calibration, and the validation harness — is built and passes a 460-test suite. The remaining step is empirical: running the recorder-matched corpus through the system to confirm the working accuracy target (250 ft RMSE on touchdown point) is achievable at the 4–5-second ADS-B reporting cadence. The accuracy targets are deliberately held as provisional until that baseline run ratifies them.
+
+**The decision this enables:** fleet-wide, continuous monitoring of landing-overrun risk across all operations — not just the recorder-equipped subset — with statistically honest per-landing confidence.
+
+## Slide-deck talking points
+
+**Slide — the problem.**
+- Runway overruns are a leading serious-accident category; long and fast touchdowns are the measurable precursors.
+- Today we can only measure touchdown on flights with recorder (QAR) data — a fraction of operations.
+
+**Slide — the opportunity.**
+- Every airliner already broadcasts position and speed every 4–5 seconds (ADS-B); it's recorded fleet-wide.
+- If touchdown can be inferred from ADS-B, overrun-risk monitoring extends to essentially *all* landings.
+
+**Slide — why it's hard.**
+- At landing speed, a plane covers ~900 ft between ADS-B reports; touchdown always falls *between* reports.
+- The one signal that sounds helpful (the aircraft's "on-ground" flag) flips late and inconsistently — usable only as a sanity bound, never as the answer.
+- Position and speed messages aren't even timestamped together; naïvely merging them injects errors as large as the quantity being measured.
+
+**Slide — the approach.**
+- Estimate the *time* of touchdown to sub-second precision, then map time → runway position.
+- Seven independent estimators across three families — physics (deceleration knee, descent-curve crossing, tracking filter), statistical change-point detection, and machine learning trained on recorder-matched flights.
+- A calibrated fusion blends them, down-weighting whichever methods look unreliable on each specific landing.
+
+**Slide — why to trust it.**
+- 40,500 recorder-matched flights are the answer key: every method is graded against known truth, with leakage-controlled train/test splits.
+- Every output carries a calibrated confidence interval — verified so that "90% confident" empirically means ~90%.
+- Every machine-learned estimate ships with an interpretable physics estimate alongside it, for explainability to regulators.
+- The system says "no estimate" rather than guessing when data quality is insufficient, with a machine-readable reason.
+
+**Slide — status and next step.**
+- Pipeline complete: ingestion → quality gates → estimators → fusion → calibrated uncertainty → validation harness; 460 automated tests.
+- Next: run the recorder-matched corpus to establish the accuracy floor imposed by the 4–5 s data cadence and ratify the provisional 250 ft RMSE target.
+
+## For technical peer reviewers
+
+The fastest path to a substantive review:
+
+1. **Read the specs in order.** [requirements.md](.kiro/specs/touchdown-point-detection/requirements.md) (21 EARS-style requirements — the *what*), then [design.md](.kiro/specs/touchdown-point-detection/design.md) (architecture, data models, 23 correctness properties — the *how*). The "Key Technical Decisions" table in the design doc is the 5-minute version of every load-bearing choice and its rationale.
+2. **Know the four data pathologies everything is designed around.** Coarse cadence (4–5 s, so touchdown falls between samples); asynchronous position/velocity timestamps (naïve merging injects ~130 m at approach speed); unreliable vertical data (baro is QNH-sensitive, geometric altitude is in HAE while runway elevations are MSL — a tens-of-meters datum trap); and a late, variable on-ground flag (upper bound only, never a measurement). Most of the design is a considered response to one of these.
+3. **The architecture is a 7-module DAG** (ingest/QA → classification/bracketing → timebase → signals → estimators → fusion → mapping, with validation alongside). Every estimator emits the same contract `(t_td, sigma_t, diagnostics)`, so fusion, mapping, and validation are method-agnostic. Module-to-package mapping is in the design doc and mirrored by the repository layout below.
+
+**The claims most worth scrutinizing** (and where they're enforced):
+
+- *No leakage in the headline metrics* — tail-grouped train/calibration/test splits, with held-out-airport and held-out-runway evaluations reported separately rather than intersected (`tdz/validation/splits.py`, Property 10).
+- *Distance truth is clock-independent* — along-runway truth is projected from the QAR touchdown lat/long, so QAR↔ADS-B clock offset can corrupt only time-domain labels, not the primary distance metric (`tdz/validation/clock_alignment.py`, Req 12.10/19.3).
+- *Honest intervals* — model-based intervals are recalibrated by normalized split conformal on a partition disjoint from both training and test (`tdz/uncertainty/conformal.py`, Req 4.3/4.4: 90% intervals must land in 85–95% empirical coverage).
+- *Datum discipline* — MSL runway elevations are geoid-corrected to HAE deterministically, kept separate from any empirical sensor-bias estimate (`tdz/geo/datum.py`, `tdz/estimators/physics/flare_crossing.py`, Req 11.2/17.3).
+- *The async-merge trap* — position is dead-reckoned to query times using the velocity stream; the two timebases are never merged (`tdz/timebase/interpolation.py`, Property 3: <30 ft error bound, enforced by test).
+
+**Known assumptions and open items to challenge:**
+
+- The FR24 source is *assumed* barometric-only and provider-interpolated (config-gated, unconfirmed) — vertical estimators are disabled for it.
+- Touchdown pitch is *assumed* per aircraft type (pitch is not in ADS-B); missing lever-arm entries fall back to a class median with widened CIs rather than a worst-case bias — challenge whether that default is right for your fleet mix.
+- The 250 ft RMSE target is provisional until the cadence-limited error floor is characterized on real data (Req 13.0); all results so far are on synthetic trajectories.
+- QAR truth is treated as exact; its own touchdown-position uncertainty has not yet been characterized and would inflate apparent error.
+
+**Verify it yourself:** `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]" && .venv/bin/python -m pytest` — 460 tests, ~20 s, no data or network needed (one geoid test requires the EGM2008 grid, see Environment setup). Property-based tests (Hypothesis, ≥100 randomized cases each) cover the 23 correctness properties; the mapping from property to test is tagged in the test docstrings.
+
 ## The big picture, in plain language
 
 **The one-sentence version:** an airplane's transponder reports where it is every few seconds; we use that breadcrumb trail to figure out the exact spot on the runway where its wheels first touched, how fast it was going, and how sure we are — so safety analysts can spot landings that touched down too far down the runway or too fast.
