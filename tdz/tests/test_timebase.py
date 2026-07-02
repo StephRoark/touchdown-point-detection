@@ -524,7 +524,6 @@ def test_continuous_timebase_queries():
 @pytest.mark.unit
 def test_knots_to_mps_constant():
     """The knots->m/s conversion constant is exact and applied correctly."""
-    assert KNOTS_TO_MPS == 0.514444
-    # 1 international knot = 1852 m / 3600 s.
-    assert KNOTS_TO_MPS == pytest.approx(1852.0 / 3600.0, abs=1e-6)
-    assert 100.0 * KNOTS_TO_MPS == pytest.approx(51.4444)
+    # 1 international knot = 1852 m / 3600 s, exactly.
+    assert KNOTS_TO_MPS == 1852.0 / 3600.0
+    assert 100.0 * KNOTS_TO_MPS == pytest.approx(51.4444, abs=1e-3)

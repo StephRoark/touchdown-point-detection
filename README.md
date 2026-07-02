@@ -144,10 +144,11 @@ Suggested stack: Python 3.11+, NumPy/SciPy/pandas, `pyproj` (geodesy + geoid), `
 - ✅ **Stage 1 — Geometry, datum, and mapping.** Geodesic runway-centerline projection + reference validation, geoid (MSL→HAE) datum unification, the pitch-resolved lever-arm correction, and the wrong-runway / out-of-bounds gates.
 - ✅ **Stage 2 — Timebase, ingest/QA, bracketing.** Async-timestamp-preserving kinematic interpolation, dual-source ingest with capability gating, QA/quality gates, and flag-independent trajectory classification + coarse bracket.
 - ✅ **Stage 3 — Physics + change-point baselines.** Decel-knee, flare-crossing, and IMM physics estimators; PELT/CUSUM/GLRT/jerk-onset change-point estimators; and a stage-1–3 baseline run that beats the naive first-on-ground strawman.
-- 🚧 **Stage 4 — Learned estimators (in progress).** The LightGBM window-feature estimator is implemented; the TCN/BiLSTM sequence model and hybrid residual are next.
-- ⏳ **Stages 5–6** — fusion, uncertainty calibration, mapping/output, and the full validation harness: not yet started.
+- ✅ **Stage 4 — Learned estimators.** The LightGBM window-feature estimator, the TCN/BiLSTM sequence model (soft Gaussian labels, optional deep ensemble), the hybrid residual model, and the rare-type physics fallback.
+- ✅ **Stage 5 — Fusion + uncertainty.** The calibrated fusion ensemble (inverse-variance blend / stacking with gating and disagreement flags), split-conformal interval calibration, gap-proportional CI widening, and the time→position mapping / output-record assembly.
+- ✅ **Stage 6 — Validation, reproducibility, reporting.** QAR clock alignment (cross-correlation, drift detection), tail-grouped + held-out-airport/runway splits, stratified metrics with the naive-baseline comparison, coverage assessment, provenance stamping, and the first-milestone report (all 24 tasks in tasks.md complete).
 
-The suite currently stands at 281 passing tests (1 skipped — a geoid-grid test that needs the optional EGM2008 grid). Raw input schemas for both the ADS-B timeseries and the QAR truth data are defined and feed the ingest layer.
+The suite currently stands at 450+ passing tests (1 skipped — a geoid-grid test that needs the optional EGM2008 grid). Raw input schemas for both the ADS-B timeseries and the QAR truth data are defined and feed the ingest layer. **The remaining work is empirical, not structural:** connect real ADS-B/QAR data files to the ingest layer, run the milestone report on a real QAR slice to characterize the cadence-limited error floor, and ratify the provisional accuracy targets.
 
 ## Environment setup
 
@@ -165,6 +166,7 @@ python3 -m venv .venv
 `lightgbm` (the learned window-feature estimator) loads the OpenMP runtime `libomp` at import time, which is **not** a pip package — it must be installed at the system level, or `import lightgbm` will fail with a missing-`libomp.dylib` error.
 
 - **macOS (Homebrew):** `brew install libomp`. If Homebrew itself reports the macOS version as unsupported, run `brew update` first (a stale Homebrew predating your OS is the usual cause). On Intel Macs this lands at `/usr/local/opt/libomp`; on Apple Silicon at `/opt/homebrew/opt/libomp`. `libomp` is keg-only, which is expected — LightGBM finds it via the `opt` symlink. Do **not** hand-copy `libomp.dylib` into `/usr/local/opt/libomp` (a real directory there blocks the proper Homebrew install).
+- **Apple Silicon migrated from an Intel Mac:** a Migration-Assistant-carried Homebrew at `/usr/local` provides only x86_64 `libomp`, which the arm64 LightGBM wheel cannot load (`incompatible architecture`). Install native arm64 Homebrew (at `/opt/homebrew`) and `brew install libomp` there. Interim workaround: torch's wheel bundles an arm64 `libomp`, so `DYLD_LIBRARY_PATH=.venv/lib/python3.12/site-packages/torch/lib .venv/bin/python -m pytest` runs the suite. Likewise, a venv copied from an Intel Mac contains x86_64 wheels and must be recreated (`rm -rf .venv && python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`).
 - **Linux:** install your distro's OpenMP runtime (e.g. `libgomp1` on Debian/Ubuntu), or use the conda-forge `lightgbm` build which bundles it.
 - **conda (any OS):** `conda install -c conda-forge lightgbm` pulls in the OpenMP runtime automatically.
 

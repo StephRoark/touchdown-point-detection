@@ -258,10 +258,16 @@ class CalibratedFusion(FusionEnsemble):
 
         # Stacking: use a calibrated coefficient where available, falling back to
         # the inverse-variance weight for any method without a calibrated entry.
-        return [
+        weights = [
             self.stacking_weights.get(name, iv)
             for name, iv in zip(names, inverse_variance)
         ]
+        # Degenerate calibration (every eligible estimator assigned zero weight)
+        # would make the blend's normalisation ill-defined; fall back to
+        # inverse-variance weighting rather than emit NaNs.
+        if math.fsum(weights) <= 0.0:
+            return inverse_variance
+        return weights
 
     # -- gating / confidence ----------------------------------------------
 

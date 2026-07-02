@@ -526,6 +526,56 @@ def test_flare_main_gear_offset_shifts_crossing_earlier():
     assert t_gear < t_antenna
 
 
+@pytest.mark.unit
+def test_flare_ascending_only_crossing_defers():
+    """A climbing profile through the fit region defers, never an ascending root.
+
+    Heights INCREASE through the extended region (e.g. a climb-out segment that
+    slipped past classification). The fitted profile only crosses the target
+    height while ascending -- physically not a touchdown -- so the estimator
+    must return a failed estimate rather than report the ascending crossing.
+    """
+    runway = _runway()
+    heights = np.array([5.0, 15.0, 25.0, 35.0, 45.0])  # climbing, all in region
+    position_times = np.arange(heights.size) * 4.5
+    flight = _flight_from_heights(
+        position_times=position_times,
+        heights_above_runway_m=heights,
+        runway=runway,
+    )
+    estimate = FlareCrossingEstimator().estimate(flight)
+    assert estimate.confidence == "failed"
+    assert (
+        estimate.diagnostics["reason_code"]
+        == FailureReason.INSUFFICIENT_FLARE_SAMPLES.value
+    )
+    assert not math.isfinite(estimate.t_td)
+
+
+@pytest.mark.unit
+def test_flare_crossing_beyond_extrapolation_horizon_defers():
+    """A crossing far beyond the fitted data is an extrapolation artifact.
+
+    A shallow descent (60 m -> 51 m over 18 s) whose fitted profile only reaches
+    the runway ~100 s past the last sample -- far outside the extrapolation
+    horizon -- must defer rather than report a wildly extrapolated time.
+    """
+    runway = _runway()
+    position_times = np.arange(5) * 4.5
+    heights = 60.0 - 0.5 * position_times  # descending; crossing of 0 at t=120 s
+    flight = _flight_from_heights(
+        position_times=position_times,
+        heights_above_runway_m=heights,
+        runway=runway,
+    )
+    estimate = FlareCrossingEstimator().estimate(flight)
+    assert estimate.confidence == "failed"
+    assert (
+        estimate.diagnostics["reason_code"]
+        == FailureReason.INSUFFICIENT_FLARE_SAMPLES.value
+    )
+
+
 # ===========================================================================
 # IMM filter + RTS smoother (Task 12.3)
 # ===========================================================================

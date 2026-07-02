@@ -339,6 +339,29 @@ def test_stacking_without_weights_falls_back_to_inverse_variance():
     assert fused_stacking.sigma_t == pytest.approx(fused_blend.sigma_t)
 
 
+def test_stacking_all_zero_weights_falls_back_to_inverse_variance():
+    """Degenerate calibration (all eligible coefficients zero) must not NaN out.
+
+    If every eligible estimator is assigned a zero stacking coefficient the
+    normalisation would divide by zero; the blend falls back to inverse-variance
+    weighting and still produces a finite fused estimate.
+    """
+    estimates = _three_family_estimates()
+    zero_weights = {est.method_name: 0.0 for est in estimates}
+    stacking = CalibratedFusion(
+        _fusion_config(METHOD_STACKING), stacking_weights=zero_weights
+    )
+    blend = CalibratedFusion(_fusion_config(METHOD_WEIGHTED_BLEND))
+
+    fused_stacking = stacking.fuse(estimates, _context())
+    fused_blend = blend.fuse(estimates, _context())
+
+    assert math.isfinite(fused_stacking.t_td)
+    assert math.isfinite(fused_stacking.sigma_t)
+    assert fused_stacking.t_td == pytest.approx(fused_blend.t_td)
+    assert fused_stacking.sigma_t == pytest.approx(fused_blend.sigma_t)
+
+
 def test_build_fusion_returns_configured_ensemble():
     fusion = build_fusion(_fusion_config(METHOD_WEIGHTED_BLEND))
     assert isinstance(fusion, CalibratedFusion)

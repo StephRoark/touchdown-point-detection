@@ -62,7 +62,11 @@ Disabling / starvation (Req 17.2, 17.5, 8.8)
 How ``t_td`` and ``sigma_t`` are computed
 -----------------------------------------
 ``t_td`` is the model's crossing of ``h = V`` (the descending real root nearest
-the end of the descent). ``sigma_t`` combines the fit's height residual RMS
+the end of the descent). If the fitted profile has no descending crossing (only
+an ascending one, e.g. a climbing segment), or the crossing lies more than
+:data:`MAX_EXTRAPOLATION_CADENCES` median sample spacings outside the fitted
+data, the estimator defers (failed estimate) rather than reporting an
+extrapolation artifact. ``sigma_t`` combines the fit's height residual RMS
 mapped through the descent rate at the crossing (``residual_rms / |dh/dt|``,
 metres / (m/s) = s) with a cadence floor, mirroring the decel-knee derivation.
 
@@ -98,6 +102,7 @@ __all__ = [
     "CADENCE_SIGMA_FRACTION",
     "MIN_DESCENT_RATE_MPS",
     "MIN_SIGMA_T_S",
+    "MAX_EXTRAPOLATION_CADENCES",
     "default_vertical_crossing_config",
 ]
 
@@ -119,6 +124,13 @@ CADENCE_SIGMA_FRACTION: Final[float] = 0.5
 #: Floor on the descent rate (m/s) used in the sigma_t mapping so a near-zero
 #: dh/dt at the crossing does not blow up the time uncertainty.
 MIN_DESCENT_RATE_MPS: Final[float] = 0.3
+
+#: Extrapolation horizon for the crossing solution, in multiples of the median
+#: sample spacing of the fit-region samples. A crossing farther than this
+#: outside the fitted data is an extrapolation artifact (e.g. a near-flat
+#: profile whose fitted curve only reaches the target height far beyond the
+#: data), not a touchdown observation; the estimator defers instead.
+MAX_EXTRAPOLATION_CADENCES: Final[float] = 3.0
 
 #: Absolute floor on the reported sigma_t (seconds).
 MIN_SIGMA_T_S: Final[float] = 0.25
@@ -257,7 +269,10 @@ class FlareCrossingEstimator(PhysicsEstimator):
                     "n_samples_in_fit_region": n_in_region,
                     "geoid_undulation_m": undulation,
                     "datum_used": "HAE",
-                    "reason_detail": "no descending crossing of target height",
+                    "reason_detail": (
+                        "no descending crossing of target height within the "
+                        "extrapolation horizon"
+                    ),
                 },
             )
 
@@ -331,14 +346,16 @@ class FlareCrossingEstimator(PhysicsEstimator):
         if not roots:
             return None
 
-        # Prefer the descending crossing nearest the end of the fit region.
+        # Take the DESCENDING crossing nearest the end of the fit region. An
+        # ascending root (the fitted profile climbing through the target height)
+        # is not a touchdown; if no descending root exists the estimator defers
+        # (returns None) rather than reporting a physically meaningless time.
+        u_start = float(u[0])
         u_end = float(u[-1])
         best_u: Optional[float] = None
         best_key = np.inf
         for r in roots:
             slope = 2.0 * c2 * r + c1  # dh/du
-            # A touchdown crossing is a descent (slope <= 0) at/after the last
-            # sample, within a reasonable extrapolation horizon.
             if slope > 0:
                 continue
             key = abs(r - u_end)
@@ -346,8 +363,18 @@ class FlareCrossingEstimator(PhysicsEstimator):
                 best_key = key
                 best_u = r
         if best_u is None:
-            # Fall back to the root nearest the region end regardless of sign.
-            best_u = min(roots, key=lambda r: abs(r - u_end))
+            return None
+
+        # Reject a crossing outside the extrapolation horizon: the quadratic is
+        # only trusted near the data it was fit to (design comment "within a
+        # reasonable extrapolation horizon").
+        if u.size >= 2:
+            median_dt = float(np.median(np.diff(u)))
+        else:
+            median_dt = 0.0
+        horizon = MAX_EXTRAPOLATION_CADENCES * median_dt
+        if best_u < u_start - horizon or best_u > u_end + horizon:
+            return None
 
         descent_rate = abs(2.0 * c2 * best_u + c1)
         # store coeffs in ascending order [c0, c1, c2] for readability

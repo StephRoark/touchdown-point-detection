@@ -139,13 +139,20 @@ def lookup_geoid_undulation(
         if not group.transformers:
             return None
         # A transformer is unusable if its grids are not available locally.
+        # NEVER fall back to a transformer with missing grids: pyproj may then
+        # apply a degraded (lower-accuracy or null) vertical shift and return a
+        # plausible-looking but wrong undulation -- exactly the silent
+        # tens-of-metres vertical bias this module exists to prevent. Degrade
+        # to None instead so the caller raises DatumUnresolvedError.
         available = [
             t
             for t in group.transformers
             if getattr(t, "is_network_enabled", False)
             or _transformer_grids_available(t)
         ]
-        transformer = available[0] if available else group.transformers[0]
+        if not available:
+            return None
+        transformer = available[0]
         _lon_out, _lat_out, h_orthometric = transformer.transform(lon, lat, 0.0)
         if h_orthometric is None:
             return None

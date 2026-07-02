@@ -23,7 +23,7 @@ Public API (Task 8 -- async-timestamp-preserving interpolation & resampling):
 * :func:`compute_time_deltas` -- the explicit irregular-spacing channel
   (maps to :attr:`tdz.models.FlightRecord.time_deltas`).
 * :func:`monotone_interpolate` -- numpy-only PCHIP (no-overshoot) interpolation.
-* :data:`KNOTS_TO_MPS` -- documented knots->m/s constant (1 kt = 0.514444 m/s).
+* :data:`KNOTS_TO_MPS` -- documented knots->m/s constant (1 kt = 1852/3600 m/s).
 * :data:`MAX_TIMESTAMP_MISALIGNMENT_ERROR_M` -- the 9.14 m (30 ft) accuracy bound.
 
 The separate ``position_times`` and ``velocity_times`` arrays are never merged

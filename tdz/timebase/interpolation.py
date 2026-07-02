@@ -35,7 +35,7 @@ Units convention
 ----------------
 SI internally: meters, meters/second, seconds, radians. Groundspeed is ingested
 in knots and converted with the documented constant :data:`KNOTS_TO_MPS`
-(1 kt = 0.514444 m/s); track is degrees true. Latitude/longitude stay in decimal
+(1 kt = 1852/3600 m/s); track is degrees true. Latitude/longitude stay in decimal
 degrees (the geodetic coordinate, not a "unit" to convert). No conversion to
 feet happens here -- that is the output boundary (Task 20).
 """
@@ -66,7 +66,7 @@ __all__ = [
 ]
 
 #: Exact knots -> meters/second conversion (1 international knot = 1852 m / 3600 s).
-KNOTS_TO_MPS: Final[float] = 0.514444
+KNOTS_TO_MPS: Final[float] = 1852.0 / 3600.0
 
 #: Documented accuracy bound for timestamp-misalignment position error
 #: (30 ft = 9.14 m), Req 10.3 / Property 3. Informational; enforced by tests.
