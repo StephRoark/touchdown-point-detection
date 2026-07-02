@@ -32,6 +32,22 @@ Property 20):
 * :data:`GEOMETRIC_ALTITUDE_ESTIMATORS` -- the geometric-altitude-dependent
   estimator ids.
 
+File readers (:mod:`tdz.io.readers`) — delivered ADS-B/QAR files (CSV/Parquet)
+-> pipeline-internal records:
+
+* :func:`read_adsb_file` / :func:`read_adsb_flights` — load + schema-validate
+  the delivered ADS-B timeseries and assemble per-flight
+  :class:`~tdz.models.FlightRecord` objects (with :class:`AdsbFlightMeta` for
+  the QAR join and tail-grouped split, and explicit :class:`SkippedFlight`
+  reasons).
+* :func:`read_runway_supplement` — the (airport, runway) geometry table for
+  the fields the delivered files lack (heading, elevation+datum, width).
+* :func:`read_qar_file` / :func:`match_qar_to_flights` — QAR truth rows and
+  the airframe+landing-time join producing
+  :class:`~tdz.models.QARTruthRecord` objects.
+* :class:`RawUnits` — the explicit, flip-able unit assumptions for the
+  'TODO: confirm' raw columns.
+
 QA gates (Task 9.3, :mod:`tdz.io.qa`; Req 9.1, 9.3, 9.4, 9.5 / Properties 8, 9,
 13):
 
@@ -69,6 +85,22 @@ from tdz.io.qa import (
     evaluate_sufficiency,
     run_qa,
 )
+from tdz.io.readers import (
+    AdsbFlightMeta,
+    AdsbReadResult,
+    QARMatchResult,
+    RawFileError,
+    RawUnits,
+    RunwaySupplementEntry,
+    SkippedFlight,
+    flight_records_from_adsb,
+    match_qar_to_flights,
+    qar_records_from_dataframe,
+    read_adsb_file,
+    read_adsb_flights,
+    read_qar_file,
+    read_runway_supplement,
+)
 from tdz.io.raw_schema import (
     ADSB_FIELDS,
     ADSB_TO_FLIGHTRECORD,
@@ -104,6 +136,21 @@ __all__ = [
     "find_qar_truth",
     "aireon_messages_from_dataframe",
     "fr24_records_from_dataframe",
+    # readers (delivered files)
+    "RawFileError",
+    "RawUnits",
+    "RunwaySupplementEntry",
+    "SkippedFlight",
+    "AdsbFlightMeta",
+    "AdsbReadResult",
+    "QARMatchResult",
+    "read_adsb_file",
+    "read_adsb_flights",
+    "read_qar_file",
+    "read_runway_supplement",
+    "flight_records_from_adsb",
+    "qar_records_from_dataframe",
+    "match_qar_to_flights",
     # gating (Task 9.2)
     "GEOMETRIC_ALTITUDE_ESTIMATORS",
     "SourceGating",
