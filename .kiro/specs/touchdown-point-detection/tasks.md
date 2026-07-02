@@ -211,12 +211,12 @@ Tasks within the same wave have no dependencies on each other and may be execute
   - [x] 22.4 Implement coverage assessment (90% CI → 85–95%) on the calibration split; characterize and report the cadence-limited error floor; flag below-target strata (≥200 flights) against the provisional targets without hard-failing.
   - _Requirements: 4.3, 4.4, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10, 13.0, 13.1, 13.2, 13.3, 13.4, 13.5; Property 10_
 
-- [ ] 23. Implement reproducibility and provenance
+- [x] 23. Implement reproducibility and provenance
   - Propagate a single master seed to all stochastic components; produce bit-identical outputs for physics/change-point/LightGBM/geometry fields; for the neural model reproduce within a documented tolerance or bit-identically in an explicit deterministic mode (record the mode); record data version, git commit, model artifact hash, resolved config, Python and key library versions with every output batch.
   - Write property test P11 (deterministic reproducibility) and integration tests for both source formats on identical trajectories.
   - _Requirements: 15.1, 15.2, 15.3; Property 11_
 
-- [ ] 24. First-milestone validation report
+- [x] 24. First-milestone validation report
   - Run stages 1–3 on a held-out QAR slice, produce the distance-error distribution and baseline comparison, and confirm the cadence-limited floor — establishing how much room the learned models have to add before ratifying the provisional accuracy targets.
   - _Requirements: 13.0, 12.8_
 

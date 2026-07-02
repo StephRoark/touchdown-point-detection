@@ -5,6 +5,7 @@
 pipeline:
   master_random_seed: 42
   ads_b_source: "aireon"            # "aireon" | "fr24"
+  deterministic_mode: true          # Neural deterministic-execution mode (Req 15.2); recorded in provenance
 
 timebase:
   strategy: "common_grid"           # "common_grid" | "continuous_time"

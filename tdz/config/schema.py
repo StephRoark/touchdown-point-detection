@@ -95,6 +95,14 @@ ALLOWED_SPLIT_KEYS: frozenset[str] = frozenset({"tail", "airport", "runway"})
 class PipelineConfig:
     master_random_seed: int
     ads_b_source: str               # "aireon" | "fr24"
+    # Explicit neural deterministic-execution mode (Req 15.2). When True the
+    # neural sequence model requests PyTorch deterministic algorithms so its
+    # outputs are bit-identical across runs (at reduced throughput); when False
+    # the neural model is only guaranteed reproducible within a documented
+    # tolerance. Physics / change-point / LightGBM / geometry are always
+    # bit-identical regardless of this flag. The mode used is recorded in the
+    # batch provenance. Defaulted so existing constructors stay valid.
+    deterministic_mode: bool = True
 
 
 @dataclass
