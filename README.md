@@ -303,6 +303,7 @@ A practical first milestone: run stages 1–3 on a held-out QAR slice, produce t
 ## Status and open items
 
 - **FR24 (second source) provenance** — altitude type and raw-vs-interpolated samples unconfirmed; encoded as a config-gated assumption.
+- **Runway length/displacement input units** — `runway_length`, `threshold_diplacement_length` [sic], `opposite_displacement_length`, and `destination_runway_length` are *assumed meters* in the raw input schema (`tdz/io/raw_schema.py`, marked "TODO: confirm m vs ft"). Confirm with the data provider before the first real-data run: if the data is actually feet, runways over 6,000 (ft) are rejected loudly by the 0–6000 m validation bound, but shorter runways would pass silently with a 3.28× geometry error. (Output distances are always feet, converted once at the output boundary; internal computation is SI meters.)
 - **Accuracy targets** — provisional pending the cadence-floor baseline.
 - **Lever-arm default** — implemented as class-median + low-confidence + widened CI (not a worst-case bias), per the design rationale.
 
