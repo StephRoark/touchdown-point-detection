@@ -135,7 +135,9 @@ def lookup_geoid_undulation(
         # Ellipsoidal height (EPSG:4979, WGS-84 3D) -> orthometric height on the
         # EGM2008 geoid (EPSG:3855). The vertical shift at h_ellipsoidal = 0 is
         # -N, so N = h_ellipsoidal - h_orthometric evaluated at h = 0.
-        group = TransformerGroup(4979, 3855)
+        # always_xy=True forces (lon, lat) axis order; the EPSG:4979 authority
+        # order is (lat, lon), which would silently transpose the query point.
+        group = TransformerGroup(4979, 3855, always_xy=True)
         if not group.transformers:
             return None
         # A transformer is unusable if its grids are not available locally.
