@@ -41,6 +41,7 @@ from tdz.config.schema import (
     LeverArmsConfig,
     OutputConfig,
     PipelineConfig,
+    ProvisionalAccuracyTargets,
     QualityGatesConfig,
     SignalsConfig,
     TDZConfig,
@@ -463,16 +464,84 @@ def _resolve_validation(data: dict, resolved: dict) -> ValidationConfig:
         generalization_evals = list(value)
     out["generalization_evals"] = generalization_evals
 
+    asb_path = "validation.approach_speed_band_edges_kt"
+    default_edges = [120.0, 140.0, 160.0]
+    if (
+        "approach_speed_band_edges_kt" not in raw
+        or raw["approach_speed_band_edges_kt"] is None
+    ):
+        logger.warning(
+            "Config parameter '%s' missing; applying default value %r",
+            asb_path,
+            default_edges,
+        )
+        band_edges = list(default_edges)
+    else:
+        value = raw["approach_speed_band_edges_kt"]
+        if not isinstance(value, list):
+            raise ConfigValidationError(asb_path, f"expected list, got {_type_name(value)}")
+        band_edges = []
+        for item in value:
+            if isinstance(item, bool) or not isinstance(item, (int, float)):
+                raise ConfigValidationError(
+                    asb_path, f"expected numeric entries, got {_type_name(item)}"
+                )
+            band_edges.append(float(item))
+        if any(e <= 0.0 for e in band_edges):
+            raise ConfigValidationError(asb_path, "band edges must be positive (knots)")
+        if band_edges != sorted(band_edges) or len(set(band_edges)) != len(band_edges):
+            raise ConfigValidationError(
+                asb_path, "band edges must be strictly increasing"
+            )
+    out["approach_speed_band_edges_kt"] = band_edges
+
+    # Provisional accuracy targets (Req 13) -- nested, optional block. These are
+    # reporting targets, not pass/fail gates, until ratified against the
+    # cadence-limited error floor (Req 13.0).
+    pt_path = "validation.provisional_targets"
+    pt_raw = raw.get("provisional_targets")
+    if pt_raw is None:
+        pt_raw = {}
+    elif not isinstance(pt_raw, dict):
+        raise ConfigValidationError(pt_path, f"expected mapping, got {_type_name(pt_raw)}")
+    pt_out: dict = {}
+    provisional_targets = ProvisionalAccuracyTargets(
+        distance_rmse_ft=_scalar(pt_raw, pt_out, pt_path, "distance_rmse_ft", float, 250.0, minimum=0.0, maximum=100000.0),
+        distance_p95_abs_error_ft=_scalar(pt_raw, pt_out, pt_path, "distance_p95_abs_error_ft", float, 400.0, minimum=0.0, maximum=100000.0),
+        distance_p95_long_side_ft=_scalar(pt_raw, pt_out, pt_path, "distance_p95_long_side_ft", float, 500.0, minimum=0.0, maximum=100000.0),
+        median_signed_error_abs_ft=_scalar(pt_raw, pt_out, pt_path, "median_signed_error_abs_ft", float, 75.0, minimum=0.0, maximum=100000.0),
+        baseline_improvement_pct=_scalar(pt_raw, pt_out, pt_path, "baseline_improvement_pct", float, 30.0, minimum=0.0, maximum=100.0),
+    )
+    out["provisional_targets"] = pt_out
+
     cfg = ValidationConfig(
         primary_split_key=primary_split_key,
         generalization_evals=generalization_evals,
         use_calibration_split=_scalar(raw, out, "validation", "use_calibration_split", bool, True),
+        train_fraction=_scalar(raw, out, "validation", "train_fraction", float, 0.70, minimum=0.0, maximum=1.0),
+        calibration_fraction=_scalar(raw, out, "validation", "calibration_fraction", float, 0.15, minimum=0.0, maximum=1.0),
+        test_fraction=_scalar(raw, out, "validation", "test_fraction", float, 0.15, minimum=0.0, maximum=1.0),
         min_stratum_size=_scalar(raw, out, "validation", "min_stratum_size", int, 30, minimum=1, maximum=100000),
         cross_source=_scalar(raw, out, "validation", "cross_source", bool, True),
         clock_offset_max_s=_scalar(raw, out, "validation", "clock_offset_max_s", float, 2.0, minimum=0.0, maximum=60.0),
         clock_drift_max_s=_scalar(raw, out, "validation", "clock_drift_max_s", float, 1.0, minimum=0.0, maximum=60.0),
+        clock_xcorr_resample_dt_s=_scalar(raw, out, "validation", "clock_xcorr_resample_dt_s", float, 0.1, minimum=0.001, maximum=5.0),
+        clock_max_lag_search_s=_scalar(raw, out, "validation", "clock_max_lag_search_s", float, 10.0, minimum=0.1, maximum=120.0),
+        clock_min_overlap_s=_scalar(raw, out, "validation", "clock_min_overlap_s", float, 20.0, minimum=0.0, maximum=3600.0),
+        clock_min_peak_correlation=_scalar(raw, out, "validation", "clock_min_peak_correlation", float, 0.5, minimum=0.0, maximum=1.0),
+        clock_drift_segments=_scalar(raw, out, "validation", "clock_drift_segments", int, 3, minimum=2, maximum=50),
         wrong_runway_lateral_margin_ft=_scalar(raw, out, "validation", "wrong_runway_lateral_margin_ft", float, 50.0, minimum=0.0, maximum=1000.0),
+        approach_speed_band_edges_kt=tuple(band_edges),
+        coverage_min=_scalar(raw, out, "validation", "coverage_min", float, 0.85, minimum=0.0, maximum=1.0),
+        coverage_max=_scalar(raw, out, "validation", "coverage_max", float, 0.95, minimum=0.0, maximum=1.0),
+        below_target_min_flights=_scalar(raw, out, "validation", "below_target_min_flights", int, 200, minimum=1, maximum=1000000),
+        provisional_targets=provisional_targets,
     )
+    if cfg.coverage_min >= cfg.coverage_max:
+        raise ConfigValidationError(
+            "validation.coverage_min",
+            f"must be < validation.coverage_max ({cfg.coverage_max}), got {cfg.coverage_min}",
+        )
     resolved["validation"] = out
     return cfg
 
